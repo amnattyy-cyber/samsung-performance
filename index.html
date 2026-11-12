@@ -321,7 +321,9 @@ main{width:100%;min-width:0}
 .tabs{flex-wrap:wrap;gap:0 16px;overflow:visible}
 .tabs button{font-weight:650;white-space:normal;text-align:left;padding:10px 0}
 .filters label,.date-card-title{font-size:12px;font-weight:700}
-.filters select,.filters input,.date-card{max-width:100%}
+.filters label{min-width:0;max-width:min(100%,240px)}
+.filters select,.filters input,.date-card{min-width:0;max-width:100%}
+.filters select{width:100%}
 .panel{padding:clamp(10px,1.2vw,18px);border-radius:12px}
 main h2,.ov-grid h2,.a08-heading h2{font-weight:750;font-size:16px;line-height:1.35;letter-spacing:.015em}
 main h3,.insight-mini h3,.a08-insights h3{font-size:14px;font-weight:700;line-height:1.35}
