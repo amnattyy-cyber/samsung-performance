@@ -985,11 +985,22 @@ function a08Page(ps,t){
   +metric('Runrate สิ้นเดือน',fmt(a08Forecast(total,t))+' · '+pct(total.rr))
   +metric('MoM',badge(total.mom))+metric('WoW',badge(total.wow))+'</div>';
  const insight=a08Insights(area?summary.shop:summary.area,t);
- const rows=total.noSales.map(p=>shops.get(p.s)).sort((a,b)=>areaOrder(a.area)-areaOrder(b.area)||a.name.localeCompare(b.name,'th'));
+ const lastMonth=t.ps.slice(0,7);
+ const lastMonthStart=lastMonth+'-01',lastMonthEnd=add(t.mo+'-01',-1);
+ const hasLastMonth=complete(lastMonthStart,lastMonthEnd);
+ const rows=total.noSales.map(pair=>{
+  const lastMonthQty=hasLastMonth?Object.entries(pair.d).reduce((qty,[date,sale])=>
+   date>=lastMonthStart&&date<=lastMonthEnd?qty+sale.q:qty,0):null;
+  return {shop:shops.get(pair.s),stock:pair.stock,lastMonthQty};
+ }).sort((a,b)=>areaOrder(a.shop.area)-areaOrder(b.shop.area)||a.shop.name.localeCompare(b.shop.name,'th'));
  const noSalesDetails=rows.length?'<details><summary>ดูรายชื่อ '+fmt(rows.length)+' สาขา</summary>'
-  +table(['สาขา','Region','Type Shop','Area','PC / No PC'],rows.map(s=>'<tr><td>'+esc(s.name)+'</td><td>'
-  +esc(regionOf(s.area))+'</td><td>'+esc(s.type)+'</td><td>'+esc(s.area)+'</td><td>'
-  +esc(({YES:'PC',NO:'No PC'})[s.pc[t.mo]]||'ไม่ระบุ')+'</td></tr>'))+'</details>':'';
+  +'<p class="note">Stock ณ '+esc(D.stockDate)+' · Last Month Sales '+lastMonth
+  +(hasLastMonth?'':' · — ข้อมูลยอดขายเดือนก่อนไม่ครบ')+'</p>'
+  +table(['สาขา','Region','Type Shop','Area','PC / No PC','Stock ล่าสุด (เครื่อง)','Last Month Sales (เครื่อง)'],
+   rows.map(({shop:s,stock,lastMonthQty})=>'<tr><td>'+esc(s.name)+'</td><td>'
+    +esc(regionOf(s.area))+'</td><td>'+esc(s.type)+'</td><td>'+esc(s.area)+'</td><td>'
+    +esc(({YES:'PC',NO:'No PC'})[s.pc[t.mo]]||'ไม่ระบุ')+'</td><td>'+fmt(stock)
+    +'</td><td>'+fmt(lastMonthQty)+'</td></tr>'))+'</details>':'';
  const notes='%Achieve = Actual ÷ Target เดือน · Runrate = ยอดเฉลี่ยต่อวัน × วันทั้งเดือน · %Runrate = Runrate ÷ Target เดือน';
  const comparison='MoM เทียบ '+t.ps+' ถึง '+t.pe+' · WoW เทียบ '+t.ws+' ถึง '+t.we+' กับ '+t.pws+' ถึง '+t.pwe
   +' · แสดง — เมื่อข้อมูลไม่ครบหรือยอดฐานเป็นศูนย์';
