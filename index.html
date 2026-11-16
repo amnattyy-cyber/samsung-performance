@@ -600,6 +600,10 @@ main .insight-mini td:last-child:not(:first-child){white-space:normal}
 .areasum.as-capture .a8-branchsec,.areasum.as-capture .a8-ap-hide{display:none}
 @media(max-width:1100px){.a8-insights{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media print{.a8-insights{grid-template-columns:repeat(4,1fr)}}
+.csv-bar{display:flex;justify-content:flex-end;margin:0 0 4px}
+.csv-bar .csv-btn{font-size:12px;padding:3px 10px;border:1px solid #c7d7f7;border-radius:8px;background:#fff;color:#1428a0;cursor:pointer;font-weight:600}
+.csv-bar .csv-btn:hover{background:#e8f0fe}
+.as-capture .csv-bar{display:none!important}@media print{.csv-bar{display:none!important}}
 /* Area summary sheet */
 .areasum .as-tools{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:8px;font-size:12px;color:#64748b}
 .areasum .as-tools button{font-size:12px;padding:5px 10px}
@@ -1520,6 +1524,30 @@ ${a8BranchSection(focus.map(x=>{const tg=tgt.get(x.code)||0,ac=mtd[x.code]||0,td
 <div class="ap-sms"><div class="ap-sms-head"><h3 class="ap-h3">SMS สรุปรายงาน <small>รายเดือน · คัดลอกไปส่งต่อได้ทันที</small></h3><button data-areasum-copy>คัดลอกข้อความ</button><span class="ap-copy-status"></span></div><textarea class="ap-sms-text" readonly rows="${sms.split('\n').length+1}">${esc(sms)}</textarea></div>
 <p class="a8-note">ยอดขาย ${esc(src)} · เฉพาะ ${esc(B.sku||'GALAXY A08 4G 4/64GB')} · Target ${T4?'จาก '+esc(T4.file):'A08 4G เดือน'} · %Runrate = Actual ÷ (Target เดือน × ${span}/${nd}) · Runrate = Actual ÷ ${span} × ${nd} · Store FOCUS = สาขาที่มีเป้า (ไม่นับ 4 สาขาที่ตัดออก) · Stock 4/64 ณ ${B.stock?esc(B.stock.date+' '+B.stock.time):'—'} · จัดอันดับตาม %Runrate${outside?' · ยอดนอกสาขา FOCUS '+fmt(outside)+' เครื่อง ไม่นับในตาราง':''}</p></div></div></div></section>`;
 }
+function tableCsvButtons(){
+ const scope=document.querySelector('#content');if(!scope)return;
+ const tab=({13:'Area Summary',14:'A08 Daily Board',15:'A08 Monthly Board'})[state.tab]||'Samsung';
+ scope.querySelectorAll('table.a8-table,table.ap-table').forEach((tb,i)=>{
+  if(tb.dataset.csvReady)return;tb.dataset.csvReady='1';
+  let label='',el=tb.closest('.as-wrap')||tb;for(let p=el.previousElementSibling;p;p=p.previousElementSibling){if(p.matches('.a8-sec,.a8-branchhead,.ap-h3,.a8-insights')){label=(p.querySelector('.a8-sec')||p).textContent.trim();if(p.matches('.a8-insights'))continue;break}}
+  if(tb.classList.contains('ap-table'))label='Area Performance';else if(tb.classList.contains('a8-branch'))label='Branch '+(state.a8Area||'All Areas');else if(!/^[\x20-\x7e]+$/.test(label))label='Table '+(i+1);
+  const bar=document.createElement('div');bar.className='csv-bar';
+  const btn=document.createElement('button');btn.type='button';btn.className='csv-btn';btn.textContent='⬇ CSV';btn.title='ดาวน์โหลดตาราง '+label+' เป็นไฟล์ CSV';
+  btn.title='ดาวน์โหลดตารางนี้เป็นไฟล์ CSV';btn.onclick=()=>downloadTableCsv(tb,(tab+' '+label).replace(/\s+/g,' ').trim());
+  bar.appendChild(btn);el.parentNode.insertBefore(bar,el);
+ });
+}
+function downloadTableCsv(tb,name){
+ const clean=c=>{let t=[...c.childNodes].map(n=>n.textContent).join(' ').replace(/\s+/g,' ').trim();
+  const num=t.replace(/[−–]/g,'-').replace(/^↑\s*/,'').replace(/^↓\s*/,'-');
+  if(/^[+-]?[\d,]+(\.\d+)?%?$/.test(num))t=num.replace(/,/g,'').replace(/^\+/,'');
+  return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t};
+ const lines=[...tb.rows].map(r=>{const out=[];for(const c of r.cells){const code=c.querySelector('.a8-code');if(code){const cp=c.cloneNode(true);cp.querySelector('.a8-code').remove();out.push(clean(cp),clean(code))}else{out.push(clean(c));if(r.parentNode.tagName==='THEAD'&&tb.querySelector('tbody .a8-code')&&c.textContent.trim()==='สาขา')out.push('รหัสสาขา')}for(let k=1;k<(c.colSpan||1);k++)out.push('')}return out.join(',')});
+ const day=(document.querySelector('#date')||{}).value||'';
+ const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(name+(day?' '+day:'')).replace(/[\\/:*?"<>|]/g,'-')+'.csv';
+ document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
 function render(){const campaign=state.tab===CAMPAIGN_TAB;document.body.classList.toggle('campaign-view',campaign);syncTargetShops();syncSeriesModels();const a08=state.tab===A08_TAB;$('#model').disabled=$('#series').disabled=a08;let t=periods(),ps=chosen(a08?'GALAXY A08 4G':undefined),m=calc(ps),ar=groups(ps,'area'),ss=groups(ps,'shop');$('.tabs').innerHTML=['Overview Area','By Model','Ranking','Daily & Heat Map','MoM & WoW','No Sales & Stock','PC vs No PC','Promotion','รายงานผู้บริหาร','ตรวจสอบข้อมูล','Price Tier','A08 Performance','Campaign','สรุปราย Area','A08 Daily Board','A08 Monthly Board'].map((x,i)=>`<button data-tab="${i}" class="${state.tab===i?'on':''}">${x}</button>`).join('');$('#cards').classList.toggle('overview-cards',state.tab===0);$('#cards').classList.toggle('a08-cards-hidden',a08);$('#cards').innerHTML=a08||campaign?'':overviewCards(m,ar,t);let html='';currentExport=[];if(campaign){$('#content').innerHTML=samsungCampaignPage();bind();bindCampaignPosters();return}if(a08){$('#content').innerHTML=a08Page(ps,t);bind();return}if(state.tab===A08_MONTH_TAB){$('#cards').innerHTML='';$('#content').innerHTML=a08MonthPage();bind();return}if(state.tab===A08_BOARD_TAB){$('#cards').innerHTML='';$('#content').innerHTML=a08BoardPage();bind();return}if(state.tab===AREA_SUMMARY_TAB){$('#cards').innerHTML='';$('#content').innerHTML=areaSummaryPage(ps,t);bind();return}
 if(state.tab===0)html=overviewSalesPanels(ps,t)+`<div class="three">${panel('%Runrate by Area','100% = ถึงเป้าตามอัตราขายปัจจุบัน',bars(ar,'rr'))}${panel('%MoM by Area',t.ps+' – '+t.pe+' เทียบ '+t.start+' – '+t.cut,bars(ar,'mom'))}${panel('%WoW by Area',t.ws+' – '+t.we+' เทียบ '+t.pws+' – '+t.pwe,bars(ar,'wow'))}</div>`+panel('Area Performance','กดชื่อพื้นที่เพื่อดูสาขา · Stock/L4W ใช้ช่วงล่าสุดเสมอ',perf(ar,'area'))+($('#area').value?panel('Shop Performance','กดสาขาเพื่อดูรายรุ่น',perf(ss,'shop')):'');
 if(state.tab===1){
@@ -1622,6 +1650,7 @@ function bindDashboardPrintReport(){
 }
 
 function bind(){
+ tableCsvButtons();
  document.querySelectorAll('[data-a8area]').forEach(b=>b.onclick=()=>{const v=b.dataset.a8area;state.a8Area=v&&state.a8Area!==v?v:'';render();const el=document.getElementById('a8-branches');if(el&&state.a8Area)el.scrollIntoView({behavior:'smooth',block:'start'})});const a8m=$('#a08MDay');if(a8m)a8m.onchange=()=>{state.a08MDay=a8m.value;render()};const a8d=$('#a08Day');if(a8d)a8d.onchange=()=>{state.a08Day=a8d.value;render()};
  document.querySelectorAll('[data-areasum-unit]').forEach(b=>b.onclick=()=>{state.summaryUnit=b.dataset.areasumUnit;render()});
  document.querySelectorAll('[data-areasum-capture]').forEach(b=>b.onclick=()=>{const p=b.closest('.areasum'),on=p.classList.toggle('as-capture');b.textContent=on?'ปิดมุมมองแคป':'เต็มจอสำหรับแคป';fitAreaSummary(p)});
