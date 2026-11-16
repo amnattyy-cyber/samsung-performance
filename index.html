@@ -1448,14 +1448,15 @@ function a08BoardPage(){
  const byReg=[...regs].sort((x,y)=>y.actual-x.actual)[0],zeroReg=regs.map(g=>({g,n:zero.filter(r=>regionOf(r.name)===g.name).length})).sort((x,y)=>y.n-x.n)[0];
  const R0=B.refresh||{days:{}},prevD=(()=>{const d=new Date(day+'T00:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10)})(),prevMap=prevD<=(R0.asOf||'')?R0.days[prevD]:(B.days[prevD]&&B.days[prevD].sales);
  const prevQ=prevMap?focus.reduce((t,x)=>t+(prevMap[x.code]||0),0):null;
- const pov=['ถึง '+(rec.time||'—').replace(':','.')+' น. ขายได้ '+fmt(total.actual)+' เครื่อง ('+p1(total.ach)+' ของเป้าวัน '+t1(total.target)+')'+(byReg&&byReg.actual?' · '+byReg.name+' ทำยอดมากสุด '+fmt(byReg.actual)+' เครื่อง':'')+(top[0]?' · '+sn(top[0].name)+' นำที่ '+p1(top[0].ach):'')];
- if(zero.length)pov.push('ยังมี '+zero.length+' Area ที่ยังไม่มียอด'+(zeroReg&&zeroReg.n?' ส่วนใหญ่อยู่ใน '+zeroReg.g.name+' ('+zeroReg.n+' Area)':'')+' · Stock 4/64 ใน Area กลุ่มนี้รวม '+fmt(zero.reduce((t,r)=>t+r.stock,0))+' เครื่อง พร้อมขาย');
- pov.push('ร้าน FOCUS ที่ยังไม่มียอด '+fmt(total.noSale)+' จาก '+fmt(total.shops)+' ร้าน'+(prevQ!=null?' · เมื่อวาน ('+thS(prevD)+') ทั้งวันขายได้ '+fmt(prevQ)+' เครื่อง':''));
- const sms=['📊 Galaxy A08 4G (4/64GB) | Daily Update','🗓 '+thS(day)+' · ณ '+(rec.time||'—').replace(':','.')+' น.'+(filt.length?' · '+filt.join(' · '):''),'📌 ภาพรวม '+fmt(total.actual)+'/'+t1(total.target)+' เครื่อง ('+p1(total.ach)+') · ร้านยังไม่ขาย '+fmt(total.noSale)+'/'+fmt(total.shops),'',
-  '🔵 Region',...regs.map(r=>'• '+r.name+' '+p1(r.ach)+' | ยังไม่ขาย '+fmt(r.noSale)+' ร้าน'),'',
-  '⭐ Area นำวันนี้',...(top.length?top.map((r,i)=>['①','②','③'][i]+' '+sn(r.name)+' '+p1(r.ach)+' | ยังไม่ขาย '+fmt(r.noSale)+' ร้าน'):['• ยังไม่มี Area ที่มียอด']),'',
-  '⚠️ Area ยังไม่มียอด ('+zero.length+')',...(zero.length?zero.map(r=>'• '+sn(r.name)+' | ยังไม่ขาย '+fmt(r.noSale)+' ร้าน'):['• ทุก Area มียอดแล้ว']),'',
-  '📝 ข้อสังเกต',...pov.map(x=>'- '+x)].join('\n');
+ const nn=v=>Math.abs(v-Math.round(v))<0.05?fmt(Math.round(v)):t1(v),tm=(rec.time||'—').replace(':','.');
+ const pov=['ถึง '+tm+' น. ขายได้ '+fmt(total.actual)+' เครื่อง ('+p1(total.ach)+')'+(byReg&&byReg.actual?' · '+byReg.name+' ทำยอดมากสุด '+fmt(byReg.actual)+' เครื่อง':'')+(top[0]?' · '+sn(top[0].name)+' นำที่ '+p1(top[0].ach):'')];
+ if(zero.length)pov.push('ยังมี '+zero.length+' Area ที่ยังไม่มียอด'+(zeroReg&&zeroReg.n?' ส่วนใหญ่อยู่ใน '+zeroReg.g.name+' ('+zeroReg.n+' Area)':'')+' · Stock A08 ใน Area กลุ่มนี้รวม '+fmt(zero.reduce((t,r)=>t+r.stock,0))+' เครื่อง พร้อมขาย');
+ pov.push('ร้าน FOCUS ที่ยังไม่มียอด '+fmt(total.noSale)+' สาขา จาก '+fmt(total.shops)+' ร้าน'+(prevQ!=null?' · เมื่อวาน ('+thS(prevD)+') ทั้งวันขายได้ '+fmt(prevQ)+' เครื่อง':''));
+ const sms=['📊 Galaxy A08 4G (4/64GB) | Daily Update','🗓 '+thS(day)+' · '+tm+' น.'+(filt.length?' · '+filt.join(' · '):''),'📌 ภาพรวม '+fmt(total.actual)+'/'+nn(total.target)+' เครื่อง ('+p1(total.ach)+') · Store Nosales '+fmt(total.noSale)+'/'+fmt(total.shops),'',
+  '🔵 Region',...regs.map(r=>'• '+r.name+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'),'',
+  '⭐ Top Area วันนี้',...(top.length?top.map((r,i)=>['①','②','③'][i]+' '+sn(r.name)+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'):['• ยังไม่มี Area ที่มียอด']),'',
+  '⚠️ Area No sales ('+zero.length+')',...(zero.length?zero.map(r=>'• '+sn(r.name)+' | Store Nosales '+fmt(r.noSale)+' สาขา'):['• ทุก Area มียอดแล้ว']),'',
+  '📝',...pov.map(x=>'- '+x)].join('\n');
  return `<section class="panel areasum a8board"><div class="as-tools">${picker}<button data-areasum-capture>เต็มจอสำหรับแคป</button><button data-print>พิมพ์ / PDF</button></div>
 <div class="as-sheet"><div class="a8-layout"><figure class="a8-aw"><img src="${A08_AW}" alt="Galaxy A08 ราคาพิเศษ เริ่มต้น 1,299 บาท"><figcaption><b>Galaxy A08 4G 4/64GB</b>ราคาออกเครื่องเริ่มต้น 1,299.- จาก 5,999.- · 16 พ.ย. – 31 ธ.ค. 69</figcaption></figure>
 <div class="a8-main"><div class="a8-banner"><div><p class="a8-logo">SAMSUNG</p><h2>Galaxy A08 4/64GB · Daily Monitor <span>Store FOCUS ${fmt(total.shops)} สาขา</span></h2><p>Data as of ${asOf}${filt.length?' · '+esc(filt.join(' · ')):''}</p></div><div class="a8-stamp"><small>UPDATED</small><b>${esc((rec.time||'').replace(':','.'))} น.</b></div></div>
