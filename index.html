@@ -1391,13 +1391,18 @@ function a08BoardPage(){
  const outside=Object.entries(sales).filter(([c])=>!tgt.has(c)||NO_SALES_EXCLUDE.has(c)).reduce((s,[,q])=>s+q,0);
  const thD=new Date(day+'T00:00:00Z').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
  const top=areas.filter(r=>r.actual>0).slice(0,3),zero=areas.filter(r=>!r.actual);
- const sms=['📱 Samsung Galaxy A08 4G 4/64GB · Daily Monitor','📅 '+thD+' · ข้อมูลถึง '+(rec.time||'—')+' น. · Store FOCUS '+fmt(total.shops)+' สาขา'+(filt.length?'\n🔎 '+filt.join(' · '):''),'',
-  '🎯 ยอดวันนี้ '+fmt(total.actual)+' / เป้า '+t1(total.target)+' เครื่อง ('+p1(total.ach)+') · Diff '+diffTxt(total.diff),
-  '🏬 Store No Sale วันนี้ '+fmt(total.noSale)+'/'+fmt(total.shops)+' สาขา · Stock 4/64 '+fmt(total.stock)+' เครื่อง','',
-  '📍 ราย Region (ขาย/เป้า · %Ach · No Sale)',...regs.map(r=>'▪️ '+r.name+' '+fmt(r.actual)+'/'+t1(r.target)+' · '+p1(r.ach)+' · '+fmt(r.noSale)+'/'+fmt(r.shops)),'',
-  '🏆 Top Area วันนี้',...(top.length?top.map((r,i)=>(i+1)+'. '+r.name+' '+p1(r.ach)+' ('+fmt(r.actual)+'/'+t1(r.target)+')'):['— ยังไม่มี Area ที่มียอด']),'',
-  '🔻 Area ที่ยังไม่มียอด'+(zero.length?' ('+zero.length+')':''),...(zero.length?zero.map(r=>'▪️ '+r.name+' เป้า '+t1(r.target)+' · Stock '+fmt(r.stock)):['— ทุก Area มียอดแล้ว']),'',
-  'หมายเหตุ: ยอดจาก TSM Manual (บิลชำระแล้ว) · Target รายวัน = เป้าเดือน ÷ '+nd+' วัน · นับเฉพาะสาขา FOCUS'].join('\n');
+ const sn=n=>String(n).replace(/^UPC - /,'').replace(/ - .*$/,m=>n.startsWith('BMA')?'':m),thS=d=>new Date(d+'T00:00:00Z').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit',timeZone:'UTC'});
+ const byReg=[...regs].sort((x,y)=>y.actual-x.actual)[0],zeroReg=regs.map(g=>({g,n:zero.filter(r=>regionOf(r.name)===g.name).length})).sort((x,y)=>y.n-x.n)[0];
+ const R0=B.refresh||{days:{}},prevD=(()=>{const d=new Date(day+'T00:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10)})(),prevMap=prevD<=(R0.asOf||'')?R0.days[prevD]:(B.days[prevD]&&B.days[prevD].sales);
+ const prevQ=prevMap?focus.reduce((t,x)=>t+(prevMap[x.code]||0),0):null;
+ const pov=['ถึง '+(rec.time||'—').replace(':','.')+' น. ขายได้ '+fmt(total.actual)+' เครื่อง ('+p1(total.ach)+' ของเป้าวัน '+t1(total.target)+')'+(byReg&&byReg.actual?' · '+byReg.name+' ทำยอดมากสุด '+fmt(byReg.actual)+' เครื่อง':'')+(top[0]?' · '+sn(top[0].name)+' นำที่ '+p1(top[0].ach):'')];
+ if(zero.length)pov.push('ยังมี '+zero.length+' Area ที่ยังไม่มียอด'+(zeroReg&&zeroReg.n?' ส่วนใหญ่อยู่ใน '+zeroReg.g.name+' ('+zeroReg.n+' Area)':'')+' · Stock 4/64 ใน Area กลุ่มนี้รวม '+fmt(zero.reduce((t,r)=>t+r.stock,0))+' เครื่อง พร้อมขาย');
+ pov.push('ร้าน FOCUS ที่ยังไม่มียอด '+fmt(total.noSale)+' จาก '+fmt(total.shops)+' ร้าน'+(prevQ!=null?' · เมื่อวาน ('+thS(prevD)+') ทั้งวันขายได้ '+fmt(prevQ)+' เครื่อง':''));
+ const sms=['📊 Galaxy A08 4G (4/64GB) | Daily Update','🗓 '+thS(day)+' · ณ '+(rec.time||'—').replace(':','.')+' น.'+(filt.length?' · '+filt.join(' · '):''),'📌 ภาพรวม '+fmt(total.actual)+'/'+t1(total.target)+' เครื่อง ('+p1(total.ach)+') · ร้านยังไม่ขาย '+fmt(total.noSale)+'/'+fmt(total.shops),'',
+  '🔵 Region',...regs.map(r=>'• '+r.name+' '+p1(r.ach)+' | ยังไม่ขาย '+fmt(r.noSale)+' ร้าน'),'',
+  '⭐ Area นำวันนี้',...(top.length?top.map((r,i)=>['①','②','③'][i]+' '+sn(r.name)+' '+p1(r.ach)+' | ยังไม่ขาย '+fmt(r.noSale)+' ร้าน'):['• ยังไม่มี Area ที่มียอด']),'',
+  '⚠️ Area ยังไม่มียอด ('+zero.length+')',...(zero.length?zero.map(r=>'• '+sn(r.name)+' | ยังไม่ขาย '+fmt(r.noSale)+' ร้าน'):['• ทุก Area มียอดแล้ว']),'',
+  '📝 ข้อสังเกต',...pov.map(x=>'- '+x)].join('\n');
  return `<section class="panel areasum a8board"><div class="as-tools">${picker}<button data-areasum-capture>เต็มจอสำหรับแคป</button><button data-print>พิมพ์ / PDF</button></div>
 <div class="as-sheet"><div class="a8-layout"><figure class="a8-aw"><img src="${A08_AW}" alt="Galaxy A08 ราคาพิเศษ เริ่มต้น 1,299 บาท"><figcaption><b>Galaxy A08 4G 4/64GB</b>ราคาออกเครื่องเริ่มต้น 1,299.- จาก 5,999.- · 16 พ.ย. – 31 ธ.ค. 69</figcaption></figure>
 <div class="a8-main"><div class="a8-banner"><div><p class="a8-logo">SAMSUNG</p><h2>Galaxy A08 4/64GB · Daily Monitor <span>Store FOCUS ${fmt(total.shops)} สาขา</span></h2><p>Data as of ${asOf}${filt.length?' · '+esc(filt.join(' · ')):''}</p></div><div class="a8-stamp"><small>UPDATED</small><b>${esc((rec.time||'').replace(':','.'))} น.</b></div></div>
@@ -1445,15 +1450,16 @@ function a08MonthPage(){
  const src=cut<=R.asOf?'Data refresh SS ถึง '+cut:'Data refresh SS ถึง '+(R.asOf||'—')+' + TSM Manual '+Object.keys(B.days||{}).filter(d=>d>R.asOf&&d<=cut).join(', ');
  const kpi=(l,v,c='')=>`<div class="a8-kpi ${c}"><small>${l}</small><b>${v}</b></div>`;
  const top=areas.slice(0,3),bot=[...areas].reverse().slice(0,3),need=nd>span?Math.max(0,total.target-total.actual)/(nd-span):null;
- const sms=['📱 Samsung Galaxy A08 4G 4/64GB · Monthly Monitor','📅 '+mName+' · MTD 1–'+span+' ('+span+'/'+nd+' วัน) · Store FOCUS '+fmt(total.shops)+' สาขา'+(filt.length?'\n🔎 '+filt.join(' · '):''),'',
-  '🎯 ยอดสะสม '+fmt(total.actual)+' / เป้าเดือน '+fmt(Math.round(total.target))+' เครื่อง ('+p1(total.achM)+')',
-  '⏱️ Pace ถึงวันที่ '+span+': '+p1(total.ach)+' · Diff '+diffTxt(total.diff)+' เครื่อง',
-  '📈 Runrate สิ้นเดือน '+fmt(Math.round(total.fc))+' เครื่อง'+(need!=null?' · ต้องขายอีก '+t1(need)+' เครื่อง/วัน':''),
-  '🏬 Store No Sale MTD '+fmt(total.noSale)+'/'+fmt(total.shops)+' สาขา · Stock 4/64 '+fmt(total.stock)+' เครื่อง','',
-  '📍 ราย Region (ขาย/เป้าเดือน · %Pace)',...regs.map(r=>'▪️ '+r.name+' '+fmt(r.actual)+'/'+fmt(Math.round(r.target))+' · '+p1(r.ach)),'',
-  '🏆 Pace สูงสุด',...top.map(r=>r.rank+'. '+r.name+' '+p1(r.ach)+' ('+fmt(r.actual)+'/'+fmt(Math.round(r.target))+')'),'',
-  '🔻 Pace ต่ำสุด',...bot.map(r=>r.rank+'. '+r.name+' '+p1(r.ach)+' ('+fmt(r.actual)+'/'+fmt(Math.round(r.target))+')'+(r.noSale?' · No Sale '+r.noSale+'/'+r.shops:'')),'',
-  'หมายเหตุ: '+src+' · Pace = ยอดสะสม ÷ (เป้าเดือน × '+span+'/'+nd+') · นับเฉพาะสาขา FOCUS'].join('\n');
+ const sn=n=>String(n).replace(/^UPC - /,'').replace(/ - .*$/,m=>n.startsWith('BMA')?'':m);
+ const last7=perDay.slice(-7),avg7=last7.length?last7.reduce((t,x)=>t+x.q,0)/last7.length:0,bestReg=[...regs].sort((x,y)=>(y.ach??-1)-(x.ach??-1))[0],worstReg=[...regs].sort((x,y)=>(x.ach??1e9)-(y.ach??1e9))[0];
+ const pov=['สะสม 1–'+span+' ขายได้ '+fmt(total.actual)+' เครื่อง ('+p1(total.achM)+' ของเป้าเดือน) · Pace '+p1(total.ach)+(bestReg?' · '+bestReg.name+' นำที่ '+p1(bestReg.ach)+(worstReg&&worstReg!==bestReg?' ส่วน '+worstReg.name+' ต่ำสุด '+p1(worstReg.ach):''):'')];
+ if(need!=null)pov.push('เฉลี่ย 7 วันล่าสุด '+t1(avg7)+' เครื่อง/วัน แต่ต้องทำ '+t1(need)+' เครื่อง/วัน เพื่อปิดเป้า '+fmt(Math.round(total.target))+' · Runrate ตอนนี้ '+fmt(Math.round(total.fc))+' เครื่อง');
+ pov.push('ร้าน FOCUS ที่ยังไม่มียอดทั้งเดือน '+fmt(total.noSale)+' จาก '+fmt(total.shops)+' ร้าน · Stock 4/64 คงเหลือ '+fmt(total.stock)+' เครื่อง');
+ const sms=['📊 Galaxy A08 4G (4/64GB) | Monthly Update','🗓 '+mName+' · MTD 1–'+span+' (วันที่ '+span+'/'+nd+')'+(filt.length?' · '+filt.join(' · '):''),'📌 สะสม '+fmt(total.actual)+'/'+fmt(Math.round(total.target))+' เครื่อง ('+p1(total.achM)+') · Pace '+p1(total.ach),'',
+  '🔵 Region (Pace)',...regs.map(r=>'• '+r.name+' '+p1(r.ach)+' | '+fmt(r.actual)+'/'+fmt(Math.round(r.target))),'',
+  '⭐ Pace สูงสุด',...top.map((r,i)=>['①','②','③'][i]+' '+sn(r.name)+' '+p1(r.ach)+' | '+fmt(r.actual)+'/'+fmt(Math.round(r.target))),'',
+  '⚠️ Pace ต่ำสุด',...bot.map(r=>'• '+sn(r.name)+' '+p1(r.ach)+' | '+fmt(r.actual)+'/'+fmt(Math.round(r.target))+(r.noSale?' · ยังไม่ขาย '+r.noSale+' ร้าน':'')),'',
+  '📝 ข้อสังเกต',...pov.map(x=>'- '+x)].join('\n');
  return `<section class="panel areasum a8board a8month"><div class="as-tools">${picker}<button data-areasum-capture>เต็มจอสำหรับแคป</button><button data-print>พิมพ์ / PDF</button></div>
 <div class="as-sheet"><div class="a8-layout"><figure class="a8-aw"><img src="${A08_AW}" alt="Galaxy A08 ราคาพิเศษ เริ่มต้น 1,299 บาท"><figcaption><b>Galaxy A08 4G 4/64GB</b>ราคาออกเครื่องเริ่มต้น 1,299.- จาก 5,999.- · 16 พ.ย. – 31 ธ.ค. 69</figcaption></figure>
 <div class="a8-main"><div class="a8-banner"><div><p class="a8-logo">SAMSUNG</p><h2>Galaxy A08 4/64GB · Monthly Monitor <span>${mName} · Store FOCUS ${fmt(total.shops)} สาขา</span></h2><p>MTD 1–${span} ${esc(mName)}${filt.length?' · '+esc(filt.join(' · ')):''}</p></div><div class="a8-stamp"><small>DAY</small><b>${span}/${nd}</b></div></div>
