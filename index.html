@@ -583,10 +583,10 @@ main .insight-mini td:last-child:not(:first-child){white-space:normal}
 .a8-branchhead .a8-sec{margin:0;font-size:16px!important}.a8-branchhead .a8-sec span{color:#64748b;font-weight:600}
 .a8-branchhead button{font-size:13px;padding:5px 12px}
 .a8-hint{font-size:12px;color:#64748b}
-.a8-insights{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.a8-insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:14px}
 .a8-ins{border:1px solid #d6e2fb;border-radius:12px;padding:10px 12px;background:#fff;border-top:4px solid var(--ss)}
 .a8-ins.a8i-bot{border-top-color:#d0213b}.a8-ins.a8i-ns{border-top-color:#f59e0b}.a8-ins.a8i-stk{border-top-color:#0a3d8f}
-.a8-ins h4{margin:0 0 6px;font-size:15px;color:#0b1f4d}
+.a8-ins h4{margin:0 0 6px;font-size:15px;color:#0b1f4d}.a8-ins h4 small{font-size:11.5px;color:#64748b;font-weight:500;margin-left:4px}
 .a8-ins ol{margin:0;padding-left:20px;display:grid;gap:5px}
 .a8-ins li{font-size:13.5px;line-height:1.35}
 .a8-ins li b{color:#0b1f4d}.a8-ins li small{margin-left:6px;color:#64748b;font-size:11.5px}
@@ -1420,14 +1420,14 @@ function a8BranchSection(rows,o){
  const sn=n=>String(n).replace(/^True (Move )?Shop /,'');
  const ranked=[...list].sort((a,b)=>(b.ach??-1)-(a.ach??-1)||b.actual-a.actual||b.target-a.target);
  const top=ranked.filter(r=>r.actual>0).slice(0,3);
- const bottom=[...list].sort((a,b)=>(a.ach??1e9)-(b.ach??1e9)||b.target-a.target||b.stock-a.stock).slice(0,3);
+ const bottom=list.filter(r=>r.actual>0&&r.ach!=null&&r.ach<100).sort((a,b)=>a.ach-b.ach||((b.td??b.target)-b.actual)-((a.td??a.target)-a.actual)).slice(0,3);
  const zero=list.filter(r=>!r.actual).sort((a,b)=>b.stock-a.stock||b.target-a.target);
  const stockHi=[...list].sort((a,b)=>b.stock-a.stock||a.actual-b.actual).filter(r=>r.stock>0).slice(0,5);
  const item=(r,extra)=>`<li><b>${esc(sn(r.name))}</b>${area?'':`<small>${esc(r.area)}</small>`}<span>${extra}</span></li>`;
  const tg=v=>o.intTarget?fmt(Math.round(v)):t1(v),achTxt=r=>o.achLabel+' '+p1(r.ach)+' · '+fmt(r.actual)+'/'+tg(r.target);
  const box=(cls,title,body)=>`<div class="a8-ins ${cls}"><h4>${title}</h4>${body}</div>`;
  const ul=(arr,f,empty)=>arr.length?`<ol>${arr.map(f).join('')}</ol>`:`<p class="a8-empty">${empty}</p>`;
- const boxes=`<div class="a8-insights">${box('a8i-top','🏆 Top 3 สาขา',ul(top,r=>item(r,achTxt(r)),'ยังไม่มีสาขาที่มียอด'))}${box('a8i-bot','🔻 Bottom 3 สาขา',ul(bottom,r=>item(r,achTxt(r)+(r.actual?'':' · ยังไม่มียอด'))))}${box('a8i-ns','🚫 Store Nosales '+fmt(zero.length)+'/'+fmt(list.length)+' สาขา',zero.length?`<ol>${zero.slice(0,6).map(r=>item(r,'Stock '+fmt(r.stock)+' · เป้า '+tg(r.target))).join('')}</ol>${zero.length>6?`<p class="a8-empty">และอีก ${zero.length-6} สาขา ดูในตารางด้านล่าง</p>`:''}`:'<p class="a8-empty">ทุกสาขามียอดแล้ว</p>')}${box('a8i-stk','📦 Stock สูง',ul(stockHi,r=>item(r,'Stock '+fmt(r.stock)+' เครื่อง · ขาย '+fmt(r.actual)+(r.actual?'':' <em>No Sales</em>')),'ไม่มีสต็อก'))}</div>`;
+ const boxes=`<div class="a8-insights">${box('a8i-top','🏆 Top 3 สาขา',ul(top,r=>item(r,achTxt(r)),'ยังไม่มีสาขาที่มียอด'))}${bottom.length?box('a8i-bot','🔻 Bottom 3 สาขา <small>มียอดแต่ต่ำกว่าเป้า</small>',ul(bottom,r=>item(r,achTxt(r)+' · ขาด '+t1(Math.max(0,(r.td??r.target)-r.actual))+(o.intTarget?' จากเป้าถึงวันที่':'')))):''}${box('a8i-ns','🚫 Store Nosales '+fmt(zero.length)+'/'+fmt(list.length)+' สาขา',zero.length?`<ol>${zero.slice(0,6).map(r=>item(r,'Stock '+fmt(r.stock)+' · เป้า '+tg(r.target))).join('')}</ol>${zero.length>6?`<p class="a8-empty">และอีก ${zero.length-6} สาขา ดูในตารางด้านล่าง</p>`:''}`:'<p class="a8-empty">ทุกสาขามียอดแล้ว</p>')}${box('a8i-stk','📦 Stock สูง',ul(stockHi,r=>item(r,'Stock '+fmt(r.stock)+' เครื่อง · ขาย '+fmt(r.actual)+(r.actual?'':' <em>No Sales</em>')),'ไม่มีสต็อก'))}</div>`;
  const shown=area?ranked:[...list].sort((a,b)=>areaOrder(a.area)-areaOrder(b.area)||(b.ach??-1)-(a.ach??-1)||b.actual-a.actual);
  const lvl=v=>v==null||v<=0?'l0':v>=100?'l4':v>=80?'l3':v>=50?'l2':'l1';
  const pcL={YES:'PC',NO:'No PC'};
@@ -1551,7 +1551,7 @@ function a08MonthPage(){
 <div class="a8-kpis">${kpi('Actual MTD',fmt(total.actual)+' <em>/ '+fmt(Math.round(total.target))+'</em>')}${kpi('%Ach เดือน',p1(total.achM))}${kpi('%Runrate ถึงวันที่ '+span,p1(total.ach),lvl(total.ach))}${kpi('Runrate สิ้นเดือน',fmt(Math.round(total.fc)))}${kpi('ต้องขายอีกต่อวัน',nd>span?t1(Math.max(0,total.target-total.actual)/(nd-span)):'—')}</div>
 <p class="a8-sec">DAILY SALES · Store FOCUS</p>${chart}
 <p class="a8-sec">BY REGION</p>${regTable}<div class="a8-gap"></div><p class="a8-sec">AREA RANKING</p>${areaTable}<div class="a8-legend"><span><i style="background:#1428a0"></i>%Runrate ≥ 100%</span><span><i style="background:#3b82f6"></i>80–99.9%</span><span><i style="background:#bfd6fe"></i>50–79.9%</span><span><i style="background:#e3edfd"></i>&lt; 50%</span><span><i style="background:#fdecee"></i>ยังไม่มียอด</span><span>แถบ No Sale = % สาขาที่ยังไม่มียอดทั้งเดือน (แดงเมื่อ ≥ 50%)</span></div>
-${a8BranchSection(focus.map(x=>{const tg=tgt.get(x.code)||0,ac=mtd[x.code]||0,td=tg*share;return {code:x.code,name:x.name,area:x.area,pc:x.pc[mo],target:tg,actual:ac,stock:stock[x.code]||0,achM:tg>0?ac/tg*100:null,ach:td>0?ac/td*100:null,fc:ac/span*nd,diff:ac-td}}),{achLabel:'%Runrate',intTarget:true,title:'Galaxy A08 4/64GB · Monthly · MTD 1–'+span+' '+mName+' · %Runrate เทียบเป้าถึงวันที่ '+span,heads:'<th>Target<small>เดือน</small></th><th>Actual<small>MTD</small></th><th>%Ach<small>เป้าเดือน</small></th><th>%Runrate</th><th>Runrate<small>สิ้นเดือน</small></th><th>Diff<small>เป้าถึงวันที่</small></th>',cells:(r,lvl)=>`<td>${fmt(Math.round(r.target))}</td><td class="${r.actual?'':'a8-zero'}">${fmt(r.actual)}</td><td>${p1(r.achM)}</td><td class="a8-ach ${lvl(r.ach)}">${p1(r.ach)}</td><td>${fmt(Math.round(r.fc))}</td><td class="${Math.round(r.diff*10)<0?'a8-neg':Math.round(r.diff*10)>0?'a8-pos':''}">${diffTxt(r.diff)}</td>`})}
+${a8BranchSection(focus.map(x=>{const tg=tgt.get(x.code)||0,ac=mtd[x.code]||0,td=tg*share;return {code:x.code,name:x.name,area:x.area,pc:x.pc[mo],target:tg,actual:ac,stock:stock[x.code]||0,td,achM:tg>0?ac/tg*100:null,ach:td>0?ac/td*100:null,fc:ac/span*nd,diff:ac-td}}),{achLabel:'%Runrate',intTarget:true,title:'Galaxy A08 4/64GB · Monthly · MTD 1–'+span+' '+mName+' · %Runrate เทียบเป้าถึงวันที่ '+span,heads:'<th>Target<small>เดือน</small></th><th>Actual<small>MTD</small></th><th>%Ach<small>เป้าเดือน</small></th><th>%Runrate</th><th>Runrate<small>สิ้นเดือน</small></th><th>Diff<small>เป้าถึงวันที่</small></th>',cells:(r,lvl)=>`<td>${fmt(Math.round(r.target))}</td><td class="${r.actual?'':'a8-zero'}">${fmt(r.actual)}</td><td>${p1(r.achM)}</td><td class="a8-ach ${lvl(r.ach)}">${p1(r.ach)}</td><td>${fmt(Math.round(r.fc))}</td><td class="${Math.round(r.diff*10)<0?'a8-neg':Math.round(r.diff*10)>0?'a8-pos':''}">${diffTxt(r.diff)}</td>`})}
 <div class="ap-sms"><div class="ap-sms-head"><h3 class="ap-h3">SMS สรุปรายงาน <small>รายเดือน · คัดลอกไปส่งต่อได้ทันที</small></h3><button data-areasum-copy>คัดลอกข้อความ</button><span class="ap-copy-status"></span></div><textarea class="ap-sms-text" readonly rows="${sms.split('\n').length+1}">${esc(sms)}</textarea></div>
 <p class="a8-note">ยอดขาย ${esc(src)} · เฉพาะ ${esc(B.sku||'GALAXY A08 4G 4/64GB')} · Target ${T4?'จาก '+esc(T4.file):'A08 4G เดือน'} · %Runrate = Actual ÷ (Target เดือน × ${span}/${nd}) · Runrate = Actual ÷ ${span} × ${nd} · Store FOCUS = สาขาที่มีเป้า (ไม่นับ 4 สาขาที่ตัดออก) · Stock 4/64 ณ ${B.stock?esc(B.stock.date+' '+B.stock.time):'—'} · จัดอันดับตาม %Runrate${outside?' · ยอดนอกสาขา FOCUS '+fmt(outside)+' เครื่อง ไม่นับในตาราง':''}</p></div></div></div></section>`;
 }
