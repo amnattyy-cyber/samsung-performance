@@ -647,7 +647,7 @@ main .insight-mini td:last-child:not(:first-child){white-space:normal}
 .a8-focussec.as-capture .as-sheet{margin:0 auto}.a8-focussec.as-capture .csv-bar{display:none!important}
 .a8-fsec{margin-top:16px}
 .a8-focussec>.as-sheet{max-width:1240px;margin:0 auto}
-.a8-ftop{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:14px;align-items:start}.a8-ftop .as-wrap{overflow:visible}.a8-ftop .a8-focus{width:100%}
+.a8-ftop{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:14px;align-items:start}.a8-ftop .as-wrap{overflow:visible}.a8-ftbl{min-width:0}.a8-ftop .a8-focus{width:100%}
 .a8board .a8-focus td,.a8board .a8-focus th{padding:6px 10px!important;font-size:15px!important}
 .a8board .a8-focus td:not(.a8-left){text-align:center}
 .a8-focus .a8-sub{display:inline!important;margin-left:6px}
@@ -1482,7 +1482,7 @@ function a8FocusTable(F,o){
  const outside=F.allBelow.filter(x=>!F.areas.some(r=>r.name===x.area));
  const sumCard=`<div class="a8-fcard a8-fsum"><h5>รวม · สาขาต่ำกว่าค่าเฉลี่ย</h5><p class="a8-fbig">${fmt(F.allBelow.length)} <small>สาขา</small></p><ul class="a8-fkv"><li><span>อยู่ใน ${F.areas.length} Area ที่ต่ำกว่าค่าเฉลี่ย</span><b>${fmt(inN)}</b></li><li><span>อยู่ใน Area อื่น</span><b>${fmt(outside.length)}</b></li><li><span>ยังไม่มียอด</span><b>${fmt(F.allBelow.filter(x=>!x.actual).length)}</b></li><li><span>Stock รอขาย</span><b>${fmt(F.allBelow.reduce((t,x)=>t+x.stock,0))}</b></li>${regs.map(g=>`<li><span>${esc(g)}</span><b>${fmt(F.allBelow.filter(x=>regionOf(x.area)===g).length)}</b></li>`).join('')}</ul></div>`;
  const cards=F.areas.map(r=>`<div class="a8-fcard"><h5>${esc(String(r.name).replace(/^UPC - /,''))} <em>${p1(r.ach)}</em></h5><p class="a8-fmeta">ต่ำกว่าค่าเฉลี่ย <b>${r.below.length}/${r.shopsIn.length}</b> สาขา · Stock ${fmt(r.belowStock)}</p><ol><li class="a8-fhead"><i>#</i><span>สาขา</span><b>${o.label}</b><small>Stock</small></li>${r.below.map(li).join('')}</ol></div>`).join('');
- return head+`<div class="a8-ftop">${table}${sumCard}</div><p class="a8-sec a8-fsec">รายชื่อสาขาที่ต่ำกว่าค่าเฉลี่ย <span class="a8-ftitle">แยกตาม Area · เรียงจากต่ำสุด · สีแดง = ยังไม่มียอด</span></p><div class="a8-fcards">${cards}</div>`;
+ return head+`<div class="a8-ftop"><div class="a8-ftbl">${table}</div>${sumCard}</div><p class="a8-sec a8-fsec">รายชื่อสาขาที่ต่ำกว่าค่าเฉลี่ย <span class="a8-ftitle">แยกตาม Area · เรียงจากต่ำสุด · สีแดง = ยังไม่มียอด</span></p><div class="a8-fcards">${cards}</div>`;
 }
 function a8BranchSection(rows,o){
  const area=state.a8Area&&rows.some(r=>r.area===state.a8Area)?state.a8Area:'';
