@@ -1550,9 +1550,18 @@ function a08MonthPage(){
  const sn=n=>String(n).replace(/^UPC - /,'').replace(/ - .*$/,m=>n.startsWith('BMA')?'':m);
  const last7=perDay.slice(-7),avg7=last7.length?last7.reduce((t,x)=>t+x.q,0)/last7.length:0,bestReg=[...regs].sort((x,y)=>(y.ach??-1)-(x.ach??-1))[0],worstReg=[...regs].sort((x,y)=>(x.ach??1e9)-(y.ach??1e9))[0];
  const zeroA=areas.filter(r=>!r.actual);
- const pov=['สะสม 1–'+span+' ขายได้ '+fmt(total.actual)+' เครื่อง ('+p1(total.achM)+') · %Runrate '+p1(total.ach)+(bestReg?' · '+bestReg.name+' นำที่ '+p1(bestReg.ach)+(worstReg&&worstReg!==bestReg?' ส่วน '+worstReg.name+' ต่ำสุด '+p1(worstReg.ach):''):'')];
- if(need!=null)pov.push('เฉลี่ย 7 วันล่าสุด '+t1(avg7)+' เครื่อง/วัน แต่ต้องทำ '+t1(need)+' เครื่อง/วัน เพื่อปิดเป้า '+fmt(Math.round(total.target))+' · Runrate ตอนนี้ '+fmt(Math.round(total.fc))+' เครื่อง');
- pov.push('ร้าน FOCUS ที่ยังไม่มียอดทั้งเดือน '+fmt(total.noSale)+' สาขา จาก '+fmt(total.shops)+' ร้าน · Stock A08 คงเหลือ '+fmt(total.stock)+' เครื่อง');
+ const prevMtd={};for(let i=1;i<span;i++){const d=mo+'-'+String(i).padStart(2,'0'),m=daily(d);for(const [c,q] of Object.entries(m))if(focusSet.has(c))prevMtd[c]=(prevMtd[c]||0)+q}
+ const prevNS=span>1?focus.filter(x=>!(prevMtd[x.code]||0)).length:null,regAch=(g,src)=>{const l=focus.filter(x=>regionOf(x.area)===g);const tt=l.reduce((t,x)=>t+(tgt.get(x.code)||0),0);return tt?l.reduce((t,x)=>t+(src[x.code]||0),0)/tt*100:0};
+ let over=null;if(span>1)for(const r1 of regs)for(const r2 of regs){if(r1!==r2&&regAch(r1.name,mtd)>regAch(r2.name,mtd)&&regAch(r1.name,prevMtd)<regAch(r2.name,prevMtd)&&(!over||regAch(r1.name,mtd)>regAch(over[0],mtd)))over=[r1.name,r2.name]}
+ const leadReg=over?over[0]:[...regs].sort((x,y)=>(y.achM??-1)-(x.achM??-1))[0]?.name,leadAreas=areas.filter(r=>regionOf(r.name)===leadReg).sort((x,y)=>(y.ach??-1)-(x.ach??-1)).slice(0,2);
+ const leadTxt=leadAreas.length?' โดย '+leadAreas.map(r=>sn(r.name)+(leadAreas.indexOf(r)===0?' ทำได้ ':' ')+p1(r.ach)).join(' และ '):'';
+ const shopRows=focus.map(x=>{const tg=(tgt.get(x.code)||0)*share,ac=mtd[x.code]||0;return {x,ach:tg>0?ac/tg*100:null}}),low=shopRows.filter(r=>!r.ach||r.ach<50);
+ let weak=areas.filter(r=>r.ach!=null&&r.ach<10),weakLbl='ที่ยังต่ำกว่า 10%';if(!weak.length){weak=[...areas].sort((x,y)=>(x.ach??0)-(y.ach??0)).slice(0,3);weakLbl='ที่ยังต่ำสุด ('+weak.map(r=>p1(r.ach)).join(', ')+')'}
+ const left=nd-span;
+ const pov=[];
+ pov.push('ตอนนี้อยู่ที่ '+p1(total.achM)+(left>0?' อีก '+left+' วันที่เหลือหากเฉลี่ยได้วันละประมาณ '+fmt(Math.ceil(need))+' เครื่อง จะไปถึงเป้า '+fmt(Math.round(total.target))+' เครื่องได้ค่ะ':' ปิดเดือนที่ '+fmt(total.actual)+' จากเป้า '+fmt(Math.round(total.target))+' เครื่องค่ะ'));
+ pov.push((prevNS==null?'Store No Sale อยู่ที่ '+fmt(total.noSale)+' Store':prevNS>total.noSale?'Store No Sale ลดลงจาก '+fmt(prevNS)+' เหลือ '+fmt(total.noSale)+' Store ภายในวันเดียว':prevNS===total.noSale?'Store No Sale ยังคงที่ '+fmt(total.noSale)+' Store เท่ากับเมื่อวาน':'Store No Sale เพิ่มจาก '+fmt(prevNS)+' เป็น '+fmt(total.noSale)+' Store')+(over?' ส่วน '+over[0]+' ขยับขึ้นมาแซง '+over[1]+leadTxt+' ค่ะ':leadReg?' ส่วน '+leadReg+' ยังนำอยู่'+leadTxt+' ค่ะ':' ค่ะ'));
+ pov.push('ยังมี '+fmt(low.length)+' Store ที่ %Runrate ต่ำกว่า 50% หรือยังไม่มียอด ('+(focus.length?Math.round(low.length/focus.length*100):0)+'%) หากแต่ละ Store ขายเพิ่มได้ 1 เครื่อง ยอดรวมจะเพิ่มอีก '+fmt(low.length)+' เครื่อง'+(weak.length?' โดยเฉพาะ '+weak.map(r=>sn(r.name)).join(', ').replace(/, ([^,]*)$/,' และ $1')+' '+weakLbl+' แต่มี Stock รวม '+fmt(weak.reduce((t,r)=>t+r.stock,0))+' เครื่องค่ะ':'ค่ะ'));
  const sms=['📊 Galaxy A08 4G (4/64GB) | Monthly Update','🗓 '+mName+' · MTD 1–'+span+' (วันที่ '+span+'/'+nd+')'+(filt.length?' · '+filt.join(' · '):''),'📌 สะสม '+fmt(total.actual)+'/'+fmt(Math.round(total.target))+' เครื่อง ('+p1(total.achM)+') · %Runrate '+p1(total.ach)+' · Store Nosales '+fmt(total.noSale)+'/'+fmt(total.shops),'',
   '🔵 Region',...regs.map(r=>'• '+r.name+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'),'',
   '⭐ Top Area เดือนนี้',...top.map((r,i)=>['①','②','③'][i]+' '+sn(r.name)+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'),'',
