@@ -645,6 +645,17 @@ main .insight-mini td:last-child:not(:first-child){white-space:normal}
 .a8board.as-capture .a8-focussec{display:none}
 .a8-focussec.as-capture{position:fixed!important;inset:0;z-index:10001;background:#fff;margin:0!important;padding:12px!important;overflow:hidden!important}
 .a8-focussec.as-capture .as-sheet{margin:0 auto}.a8-focussec.as-capture .csv-bar{display:none!important}
+.a8-fsec{margin-top:14px}
+.a8-fcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.a8-fcard{border:1px solid #d6e2fb;border-radius:10px;padding:8px 10px;background:#fff;border-top:3px solid #f59e0b}
+.a8-fcard.a8-fsum{border-top-color:#1428a0;background:#f7faff}
+.a8-fcard h5{margin:0 0 2px;font-size:14px;color:#0b1f4d;display:flex;justify-content:space-between;gap:6px}.a8-fcard h5 em{font-style:normal;color:#b45309}
+.a8-fmeta{margin:0 0 5px;font-size:11.5px;color:#64748b}
+.a8-fcard ol{margin:0;padding-left:18px;display:grid;gap:2px}
+.a8-fcard ol li{font-size:13.5px;line-height:1.35}.a8-fcard ol li span{color:#0b1f4d}.a8-fcard ol li b{margin-left:5px;font-weight:600;color:#475569}.a8-fcard ol li small{margin-left:5px;color:#94a3b8;font-size:11px}
+.a8-fcard ol li.ns span,.a8-fcard ol li.ns b{color:#d0213b}
+.a8-fbig{margin:2px 0 6px;font-size:30px;font-weight:800;color:#1428a0}.a8-fbig small{font-size:14px;color:#475569}
+.a8-fkv{list-style:none;margin:0;padding:0;display:grid;gap:3px}.a8-fkv li{display:flex;justify-content:space-between;font-size:12.5px;color:#334155;border-bottom:1px dashed #e2e8f0;padding-bottom:2px}
 /* Area summary sheet */
 .areasum .as-tools{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:8px;font-size:12px;color:#64748b}
 .areasum .as-tools button{font-size:12px;padding:5px 10px}
@@ -1449,11 +1460,19 @@ function a8BelowAvg(areas,rows,bench){
 }
 function a8FocusTable(F,o){
  const p1=v=>v==null?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
- const sn=n=>String(n).replace(/^True (Move )?Shop /,'');
- if(!F.areas.length)return `<p class="a8-sec"><span class="a8-model">Galaxy A08 4G 4/64GB</span>FOCUS · Area ต่ำกว่าค่าเฉลี่ย</p><p class="a8-empty a8-nsnone">ทุก Area ทำได้ตั้งแต่ค่าเฉลี่ย ${p1(F.bench)} ขึ้นไป</p>`;
- const body=F.areas.map(r=>`<tr><td class="a8-left"><b>${esc(r.name)}</b><small class="a8-sub">${esc(regionOf(r.name))}</small></td><td class="a8-ach l1">${p1(r.ach)}</td><td class="a8-neg">${(r.gapPts).toFixed(1)} pts</td><td><b>${fmt(r.below.length)}</b><small> / ${fmt(r.shopsIn.length)}</small></td><td>${fmt(r.belowStock)}</td><td class="a8-left a8-names">${r.below.map(x=>`<span class="${x.actual?'':'ns'}">${esc(sn(x.name))} <i>${x.actual?p1(x.pct):'0'}</i></span>`).join('')}</td></tr>`).join('');
- const tot=`<tr class="a8-total"><td>รวม ${F.areas.length} Area</td><td>—</td><td>—</td><td>${fmt(F.areas.reduce((t,r)=>t+r.below.length,0))}<small> / ${fmt(F.areas.reduce((t,r)=>t+r.shopsIn.length,0))}</small></td><td>${fmt(F.areas.reduce((t,r)=>t+r.belowStock,0))}</td><td class="a8-left">สาขาต่ำกว่าค่าเฉลี่ยทั้งหมด ${fmt(F.allBelow.length)} สาขา (ทุก Area)</td></tr>`;
- return `<p class="a8-sec"><span class="a8-model">Galaxy A08 4G 4/64GB</span>FOCUS · Area ต่ำกว่าค่าเฉลี่ย <span class="a8-bench">ค่าเฉลี่ยภาพรวม ${o.label} ${p1(F.bench)}</span>${o.title?`<span class="a8-ftitle">${esc(o.title)}</span>`:''}</p><div class="as-wrap"><table class="a8-table a8-focus"><thead><tr><th class="a8-left">Area</th><th>${o.label}</th><th>ห่างค่าเฉลี่ย</th><th>สาขาต่ำกว่าค่าเฉลี่ย</th><th class="a8-st">Stock<small>สาขากลุ่มนี้</small></th><th class="a8-left">รายชื่อสาขาที่ต่ำกว่าค่าเฉลี่ย <small>(เรียงจากต่ำสุด · สีแดง = ยังไม่มียอด)</small></th></tr></thead><tbody>${body}${tot}</tbody></table></div>`;
+ const sn=n=>String(n).replace(/^True (Move )?Shop /i,'').trim();
+ const head=`<p class="a8-sec"><span class="a8-model">Galaxy A08 4G 4/64GB</span>FOCUS · Area ต่ำกว่าค่าเฉลี่ย <span class="a8-bench">ค่าเฉลี่ยภาพรวม ${o.label} ${p1(F.bench)}</span>${o.title?`<span class="a8-ftitle">${esc(o.title)}</span>`:''}</p>`;
+ if(!F.areas.length)return head+`<p class="a8-empty a8-nsnone">ทุก Area ทำได้ตั้งแต่ค่าเฉลี่ย ${p1(F.bench)} ขึ้นไป</p>`;
+ const inN=F.areas.reduce((t,r)=>t+r.below.length,0),inShops=F.areas.reduce((t,r)=>t+r.shopsIn.length,0),inStock=F.areas.reduce((t,r)=>t+r.belowStock,0);
+ const body=F.areas.map(r=>`<tr><td class="a8-left"><b>${esc(r.name)}</b><small class="a8-sub">${esc(regionOf(r.name))}</small></td><td class="a8-ach l1">${p1(r.ach)}</td><td class="a8-neg">${(r.gapPts).toFixed(1)} pts</td><td><b>${fmt(r.below.length)}</b><small> / ${fmt(r.shopsIn.length)}</small></td><td>${fmt(r.below.filter(x=>!x.actual).length)}</td><td>${fmt(r.belowStock)}</td></tr>`).join('');
+ const tot=`<tr class="a8-total"><td>รวม ${F.areas.length} Area</td><td>—</td><td>—</td><td>${fmt(inN)}<small> / ${fmt(inShops)}</small></td><td>${fmt(F.areas.reduce((t,r)=>t+r.below.filter(x=>!x.actual).length,0))}</td><td>${fmt(inStock)}</td></tr>`;
+ const table=`<div class="as-wrap"><table class="a8-table a8-focus"><thead><tr><th class="a8-left">Area</th><th>${o.label}</th><th>ห่างค่าเฉลี่ย</th><th>สาขาต่ำกว่าค่าเฉลี่ย</th><th>ยังไม่มียอด</th><th class="a8-st">Stock<small>สาขากลุ่มนี้</small></th></tr></thead><tbody>${body}${tot}</tbody></table></div>`;
+ const li=x=>`<li class="${x.actual?'':'ns'}"><span>${esc(sn(x.name))}</span><b>${x.actual?p1(x.pct):'0'}</b><small>Stock ${fmt(x.stock)}</small></li>`;
+ const regs=[...new Set(F.allBelow.map(x=>regionOf(x.area)))].sort((a,b)=>['BMA','UPC I','UPC II'].indexOf(a)-['BMA','UPC I','UPC II'].indexOf(b));
+ const outside=F.allBelow.filter(x=>!F.areas.some(r=>r.name===x.area));
+ const sumCard=`<div class="a8-fcard a8-fsum"><h5>รวม · สาขาต่ำกว่าค่าเฉลี่ย</h5><p class="a8-fbig">${fmt(F.allBelow.length)} <small>สาขา</small></p><ul class="a8-fkv"><li><span>อยู่ใน ${F.areas.length} Area ที่ต่ำกว่าค่าเฉลี่ย</span><b>${fmt(inN)}</b></li><li><span>อยู่ใน Area อื่น</span><b>${fmt(outside.length)}</b></li><li><span>ยังไม่มียอด</span><b>${fmt(F.allBelow.filter(x=>!x.actual).length)}</b></li><li><span>Stock รอขาย</span><b>${fmt(F.allBelow.reduce((t,x)=>t+x.stock,0))}</b></li>${regs.map(g=>`<li><span>${esc(g)}</span><b>${fmt(F.allBelow.filter(x=>regionOf(x.area)===g).length)}</b></li>`).join('')}</ul></div>`;
+ const cards=F.areas.map(r=>`<div class="a8-fcard"><h5>${esc(String(r.name).replace(/^UPC - /,''))} <em>${p1(r.ach)}</em></h5><p class="a8-fmeta">ต่ำกว่าค่าเฉลี่ย ${r.below.length}/${r.shopsIn.length} สาขา · Stock ${fmt(r.belowStock)}</p><ol>${r.below.map(li).join('')}</ol></div>`).join('');
+ return head+table+`<p class="a8-sec a8-fsec">รายชื่อสาขาที่ต่ำกว่าค่าเฉลี่ย <span class="a8-ftitle">เรียงจากต่ำสุด · สีแดง = ยังไม่มียอด</span></p><div class="a8-fcards">${sumCard}${cards}</div>`;
 }
 function a8BranchSection(rows,o){
  const area=state.a8Area&&rows.some(r=>r.area===state.a8Area)?state.a8Area:'';
@@ -1545,7 +1564,7 @@ function a08BoardPage(){
   '🔵 Region',...regs.map(r=>'• '+r.name+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'),'',
   '⭐ Top Area วันนี้',...(top.length?top.map((r,i)=>['①','②','③'][i]+' '+sn(r.name)+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'):['• ยังไม่มี Area ที่มียอด']),'',
   '⚠️ Area No sales ('+zero.length+')',...(zero.length?zero.map(r=>'• '+sn(r.name)+' | Store Nosales '+fmt(r.noSale)+' สาขา'):['• ทุก Area มียอดแล้ว']),'',
-  '🎯 Area ต่ำกว่าค่าเฉลี่ย ('+p1(F.bench)+')',...(F.areas.length?F.areas.map(r=>'• '+sn(r.name)+' '+p1(r.ach)+' | ต่ำกว่าค่าเฉลี่ย '+r.below.length+'/'+r.shopsIn.length+' สาขา: '+nmList(r.below,4)):['• ไม่มี']),'',
+  '🎯 Area ต่ำกว่าค่าเฉลี่ย ('+p1(F.bench)+')',...(F.areas.length?F.areas.map(r=>'• '+sn(r.name)+' '+p1(r.ach)+' | ต่ำกว่าค่าเฉลี่ย '+r.below.length+'/'+r.shopsIn.length+' สาขา'):['• ไม่มี']),'',
   '📝',...pov.map(x=>'- '+x)].join('\n');
  return `<section class="panel areasum a8board"><div class="as-tools">${picker}<button data-areasum-capture>เต็มจอสำหรับแคป</button><button data-print>พิมพ์ / PDF</button></div>
 <div class="as-sheet"><div class="a8-layout"><figure class="a8-aw"><img src="${A08_AW}" alt="Galaxy A08 ราคาพิเศษ เริ่มต้น 1,299 บาท"><figcaption><b>Galaxy A08 4G 4/64GB</b>ราคาออกเครื่องเริ่มต้น 1,299.- จาก 5,999.- · 16 พ.ย. – 31 ธ.ค. 69</figcaption></figure>
@@ -1617,7 +1636,7 @@ function a08MonthPage(){
   '⭐ Top Area เดือนนี้',...top.map((r,i)=>['①','②','③'][i]+' '+sn(r.name)+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'),'',
   '⚠️ Bottom Area',...bot.map(r=>'• '+sn(r.name)+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'),
   ...(zeroA.length?['','🚫 Area No sales ('+zeroA.length+')',...zeroA.map(r=>'• '+sn(r.name)+' | Store Nosales '+fmt(r.noSale)+' สาขา')]:[]),'',
-  '🎯 Area ต่ำกว่าค่าเฉลี่ย ('+p1(F.bench)+')',...(F.areas.length?F.areas.map(r=>'• '+sn(r.name)+' '+p1(r.ach)+' | ต่ำกว่าค่าเฉลี่ย '+r.below.length+'/'+r.shopsIn.length+' สาขา: '+nmList(r.below,4)):['• ไม่มี']),'',
+  '🎯 Area ต่ำกว่าค่าเฉลี่ย ('+p1(F.bench)+')',...(F.areas.length?F.areas.map(r=>'• '+sn(r.name)+' '+p1(r.ach)+' | ต่ำกว่าค่าเฉลี่ย '+r.below.length+'/'+r.shopsIn.length+' สาขา'):['• ไม่มี']),'',
   '📝',...pov.map(x=>'- '+x)].join('\n');
  return `<section class="panel areasum a8board a8month"><div class="as-tools">${picker}<button data-areasum-capture>เต็มจอสำหรับแคป</button><button data-print>พิมพ์ / PDF</button></div>
 <div class="as-sheet"><div class="a8-layout"><figure class="a8-aw"><img src="${A08_AW}" alt="Galaxy A08 ราคาพิเศษ เริ่มต้น 1,299 บาท"><figcaption><b>Galaxy A08 4G 4/64GB</b>ราคาออกเครื่องเริ่มต้น 1,299.- จาก 5,999.- · 16 พ.ย. – 31 ธ.ค. 69</figcaption></figure>
