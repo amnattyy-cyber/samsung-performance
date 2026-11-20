@@ -1396,6 +1396,12 @@ function areaSummaryBody(ps,t,unit){
  const smsArea=(r,i,high)=>{const x=insight(r,high),parts=[];if(x.m)parts.push(x.m.name+' '+sgn(x.m.gap));if(x.b)parts.push('สาขา '+shortName(x.b.name)+' %Runrate '+p2(x.b.pace)+'%');if(x.zero)parts.push('No Sale '+x.zero+'/'+x.all+' สาขา');return (i+1)+'. '+r.name+' '+p2(r.pace)+'%'+(parts.length?'\n   '+parts.join(' · '):'')};
  const allBr=groups(ps,'shop',t).filter(x=>!NO_SALES_EXCLUDE.has(x.key)),allZero=allBr.filter(x=>x.qty===0).length;
  const regRows=rows.filter(r=>r.kind==='region');
+ const uu=unit==='n'?'บาท':'เครื่อง',leftA=t.nd-t.span,needA=leftA>0&&total.target>0?Math.max(0,total.target-total.cur)/leftA:null,avgA=total.cur/t.span;
+ const regOrd=[...regRows].sort((x,y)=>(y.pace??-1)-(x.pace??-1)),leadR=regOrd[0],leadAr=areaRows.filter(r=>leadR&&regionOf(r.name)===leadR.name).sort((x,y)=>(y.pace??-1)-(x.pace??-1)).slice(0,2);
+ const lowA=areaRows.filter(r=>r.pace!=null&&r.pace<80).sort((x,y)=>x.pace-y.pace),gapA=lowA.reduce((t,r)=>t+Math.max(0,r.td-r.cur),0);
+ const povA=['ตอนนี้ %Runrate อยู่ที่ '+(total.pace==null?'—':p2(total.pace)+'%')+' (ทำได้ '+(total.mtdAch==null?'—':p2(total.mtdAch)+'%')+' ของเป้าเดือน)'+(needA!=null?' อีก '+leftA+' วันที่เหลือหากเฉลี่ยได้วันละประมาณ '+fmt(Math.ceil(needA))+' '+uu+' (ตอนนี้เฉลี่ยวันละ '+fmt(Math.round(avgA))+') จะไปถึงเป้า '+fmt(total.target)+' '+uu+'ได้ค่ะ':' ค่ะ'),
+  (leadR?leadR.name+' นำที่ '+p2(leadR.pace)+'%'+(leadAr.length?' โดย '+leadAr.map((r,i)=>r.name+(i?' ':' ทำได้ ')+p2(r.pace)+'%').join(' และ '):'')+' · ':'')+'ภาพรวมเทียบ '+pmShort+' ช่วงเดียวกัน '+pc1(total.mom)+' และ W'+W+' เทียบ W'+PW+' '+pc1(total.wow)+' ค่ะ',
+  lowA.length?'ยังมี '+lowA.length+' Area ที่ %Runrate ต่ำกว่า 80% ('+lowA.slice(0,4).map(r=>r.name+' '+p2(r.pace)+'%').join(', ')+(lowA.length>4?' …':'')+') ห่างเป้าถึงวันที่รวม '+fmt(Math.round(gapA))+' '+uu+' · สาขา No Sale รวม '+allZero+' จาก '+allBr.length+' สาขาค่ะ':'ทุก Area มี %Runrate ตั้งแต่ 80% ขึ้นไป · สาขา No Sale รวม '+allZero+' จาก '+allBr.length+' สาขาค่ะ'];
  const sms=['📊 สรุปยอดขาย Samsung ราย Area | '+thDate(t.mo+'-01',{month:'long',year:'numeric'}),'📅 ยอดขาย '+thDate(t.start,{day:'numeric',month:'short'})+' – '+thDate(t.cut,{day:'numeric',month:'short',year:'numeric'})+' ('+(unit==='n'?'Net Amount บาท':'QTY เครื่อง')+')'+(filt.length?'\n🔎 '+filt.join(' · '):''),'',
   '💰 รวม Actual '+fmt(total.cur)+' / Target '+fmt(total.target)+' ('+(total.mtdAch==null?'—':p2(total.mtdAch)+'%')+')',
   '🎯 %Runrate ถึงวันที่ '+d2+': '+(total.pace==null?'—':p2(total.pace)+'%')+' | Runrate '+fmt(total.fc)+(total.fcGap==null?'':' ('+sgn(total.fcGap)+' จากเป้าเดือน)'),
@@ -1404,6 +1410,7 @@ function areaSummaryBody(ps,t,unit){
   '✅ %Runrate สูงสุด',...hi.map((r,i)=>smsArea(r,i,true)),'',
   '🔻 %Runrate ต่ำสุด',...lo.map((r,i)=>smsArea(r,i,false)),'',
   '🚫 สาขา No Sale รวม '+allZero+' จาก '+allBr.length+' สาขา','',
+  '📝',...povA.map(x=>'- '+x),'',
   'หมายเหตุ: %Runrate = Actual ÷ Target ตามสัดส่วนวัน · Runrate = Actual ÷ วันที่เลือก × วันทั้งเดือน · ยอดรุ่นเทียบเป้าถึงวันที่ · เฉพาะสาขามี Target'].join('\n');
  const kpi=(l,v,c='')=>`<div class="ap-kpi ${c}"><span>${l}</span><b>${v}</b></div>`;
  return `<section class="panel areasum"><div class="as-tools"><span>หน่วย</span>${[['n','Net Amount'],['q','QTY']].map(([k,l])=>`<button data-areasum-unit="${k}" aria-pressed="${unit===k}">${l}</button>`).join('')}<button data-areasum-capture>เต็มจอสำหรับแคป</button><button data-print>พิมพ์ / PDF</button></div>
@@ -1491,9 +1498,20 @@ function a08BoardPage(){
  const R0=B.refresh||{days:{}},prevD=(()=>{const d=new Date(day+'T00:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10)})(),prevMap=prevD<=(R0.asOf||'')?R0.days[prevD]:(B.days[prevD]&&B.days[prevD].sales);
  const prevQ=prevMap?focus.reduce((t,x)=>t+(prevMap[x.code]||0),0):null;
  const nn=v=>Math.abs(v-Math.round(v))<0.05?fmt(Math.round(v)):t1(v),tm=(rec.time||'—').replace(':','.');
- const pov=['ถึง '+tm+' น. ขายได้ '+fmt(total.actual)+' เครื่อง ('+p1(total.ach)+')'+(byReg&&byReg.actual?' · '+byReg.name+' ทำยอดมากสุด '+fmt(byReg.actual)+' เครื่อง':'')+(top[0]?' · '+sn(top[0].name)+' นำที่ '+p1(top[0].ach):'')];
- if(zero.length)pov.push('ยังมี '+zero.length+' Area ที่ยังไม่มียอด'+(zeroReg&&zeroReg.n?' ส่วนใหญ่อยู่ใน '+zeroReg.g.name+' ('+zeroReg.n+' Area)':'')+' · Stock A08 ใน Area กลุ่มนี้รวม '+fmt(zero.reduce((t,r)=>t+r.stock,0))+' เครื่อง พร้อมขาย');
- pov.push('ร้าน FOCUS ที่ยังไม่มียอด '+fmt(total.noSale)+' สาขา จาก '+fmt(total.shops)+' ร้าน'+(prevQ!=null?' · เมื่อวาน ('+thS(prevD)+') ทั้งวันขายได้ '+fmt(prevQ)+' เครื่อง':''));
+ const fset=new Set(focus.map(x=>x.code)),dayMap=d=>d<=(R0.asOf||'')?(R0.days[d]||{}):((B.days[d]&&B.days[d].sales)||{});
+ let mtdQ=0;for(let i=1;i<=+day.slice(-2);i++){const m=dayMap(mo+'-'+String(i).padStart(2,'0'));for(const [c,q] of Object.entries(m))if(fset.has(c))mtdQ+=q}
+ const monthT=total.target*nd,leftD=nd-+day.slice(-2),needD=leftD>0?Math.max(0,monthT-mtdQ)/leftD:null;
+ const prevNS=prevMap?focus.filter(x=>!(prevMap[x.code]||0)).length:null;
+ const rAch=(g,m)=>{const l=focus.filter(x=>regionOf(x.area)===g),tt=l.reduce((t,x)=>t+(tgt.get(x.code)||0),0);return tt?l.reduce((t,x)=>t+(m[x.code]||0),0)/tt*100:0};
+ let over=null;if(prevMap)for(const r1 of regs)for(const r2 of regs)if(r1!==r2&&rAch(r1.name,sales)>rAch(r2.name,sales)&&rAch(r1.name,prevMap)<rAch(r2.name,prevMap)&&(!over||rAch(r1.name,sales)>rAch(over[0],sales)))over=[r1.name,r2.name];
+ const leadReg=over?over[0]:[...regs].sort((x,y)=>(y.ach??-1)-(x.ach??-1))[0]?.name,leadA=areas.filter(r=>regionOf(r.name)===leadReg&&r.actual>0).slice(0,2);
+ const leadTxt=leadA.length?' โดย '+leadA.map((r,i)=>sn(r.name)+(i?' ':' ทำได้ ')+p1(r.ach)).join(' และ '):'';
+ const lowS=focus.filter(x=>{const tg=tgt.get(x.code)||0,ac=sales[x.code]||0;return !ac||(tg>0&&ac/tg*100<50)});
+ const weak=zero.length?zero:areas.filter(r=>r.ach!=null&&r.ach<10);
+ const pov=[];
+ pov.push('ถึง '+tm+' น. ขายได้ '+fmt(total.actual)+' เครื่อง ('+p1(total.ach)+' ของเป้าวัน)'+(prevQ!=null?' เมื่อวานทั้งวันทำได้ '+fmt(prevQ)+' เครื่อง':'')+' · ยอดสะสมเดือน '+fmt(mtdQ)+'/'+fmt(Math.round(monthT))+' ('+p1(monthT?mtdQ/monthT*100:null)+')'+(needD!=null?' อีก '+leftD+' วันที่เหลือต้องเฉลี่ยวันละประมาณ '+fmt(Math.ceil(needD))+' เครื่องค่ะ':' ค่ะ'));
+ pov.push('Store No Sale วันนี้ '+fmt(total.noSale)+' Store'+(prevNS!=null?(prevNS>total.noSale?' น้อยกว่าเมื่อวานทั้งวัน ('+fmt(prevNS)+')':prevNS<total.noSale?' ยังมากกว่าเมื่อวานทั้งวัน ('+fmt(prevNS)+')':' เท่ากับเมื่อวานทั้งวัน'):'')+(over?' ส่วน '+over[0]+' ขยับขึ้นมาแซง '+over[1]+leadTxt+' ค่ะ':leadReg?' ส่วน '+leadReg+' นำอยู่'+leadTxt+' ค่ะ':' ค่ะ'));
+ pov.push('ยังมี '+fmt(lowS.length)+' Store ที่ต่ำกว่า 50% หรือยังไม่มียอด ('+(focus.length?Math.round(lowS.length/focus.length*100):0)+'%) หากแต่ละ Store ขายเพิ่มได้ 1 เครื่อง ยอดวันนี้จะเพิ่มอีก '+fmt(lowS.length)+' เครื่อง'+(weak.length?' โดยเฉพาะ '+weak.map(r=>sn(r.name)).join(', ').replace(/, ([^,]*)$/,' และ $1')+(zero.length?' ที่ยังไม่มียอด':' ที่ยังต่ำกว่า 10%')+' แต่มี Stock รวม '+fmt(weak.reduce((t,r)=>t+r.stock,0))+' เครื่องค่ะ':'ค่ะ'));
  const sms=['📊 Galaxy A08 4G (4/64GB) | Daily Update','🗓 '+thS(day)+' · '+tm+' น.'+(filt.length?' · '+filt.join(' · '):''),'📌 ภาพรวม '+fmt(total.actual)+'/'+nn(total.target)+' เครื่อง ('+p1(total.ach)+') · Store Nosales '+fmt(total.noSale)+'/'+fmt(total.shops),'',
   '🔵 Region',...regs.map(r=>'• '+r.name+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'),'',
   '⭐ Top Area วันนี้',...(top.length?top.map((r,i)=>['①','②','③'][i]+' '+sn(r.name)+' '+p1(r.ach)+' | Store Nosales '+fmt(r.noSale)+' สาขา'):['• ยังไม่มี Area ที่มียอด']),'',
