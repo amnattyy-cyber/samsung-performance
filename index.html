@@ -683,6 +683,12 @@ main .insight-mini td:last-child:not(:first-child){white-space:normal}
 .a8-ppl{font-size:13px!important;color:#475569}
 .a8-kpi b em{font-style:normal;font-size:14px;color:#64748b}
 .a8-kpi.l0 b,.a8-kpi.l0 small{color:#d0213b!important}.a8-kpi.l0{background:#fff5f6}
+.a8n-card h5 em{color:#d0213b!important}
+.a8n-card ol li b{color:#94a3b8!important;font-weight:500!important;font-size:12px}
+.a8n-card ol li.tg b{color:#1428a0!important;font-weight:700!important}
+.a8n-card ol li.tg span{font-weight:600}
+.a8n-card{border-top-color:#d0213b!important}
+.a8nsboard.as-capture .a8n-cardsec{display:none}
 /* Area summary sheet */
 .areasum .as-tools{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:8px;font-size:12px;color:#64748b}
 .areasum .as-tools button{font-size:12px;padding:5px 10px}
@@ -1604,13 +1610,16 @@ function a08NoSalesPage(){
   '📝',`- สาขา No Sales ที่มีเป้า A08 ${fmt(zeroTg.length)} สาขา ควรตามก่อน · อีก ${fmt(tot.z-zeroTg.length)} สาขาไม่มีเป้าแต่เปิดขายได้`,
   `- สาขา No Sales ที่มี Stock พร้อมขาย ${fmt(stkIdle.length)} สาขา รวม ${fmt(stkIdle.reduce((t,s)=>t+s.stock,0))} เครื่อง · ไม่มี Stock ${fmt(tot.z-stkIdle.length)} สาขา (ต้องเติมของก่อน)`,
   hiA[0]?`- ${an(hiA[0].name)} มีสัดส่วนสาขา No Sales สูงสุด ${p1(hiA[0].pct)} · ภาพรวม ${fmt(tot.n)} สาขามีสาขาขายได้แล้ว ${p1(100-tot.pct)}`:null].filter(x=>x!==null).join('\n');
+ const nsAreas=areas.filter(a=>a.z>0);
+ const card=a=>{const l=ns.filter(s=>s.area===a.name).sort((x,y)=>(y.tg?1:0)-(x.tg?1:0)||y.stock-x.stock);return `<div class="a8-fcard a8n-card"><h5>${esc(an(a.name)===a.name?a.name:String(a.name).replace(/^UPC - /,''))} <em>${p1(a.pct)}</em></h5><p class="a8-fmeta">No Sales <b>${a.z}/${a.n}</b> สาขา · มีเป้า ${a.ztg} · Stock ${fmt(a.stk)}</p><ol><li class="a8-fhead"><i>#</i><span>สาขา</span><b>เป้า A08</b><small>Stock</small></li>${l.map((s,i)=>`<li class="${s.tg?'tg':''}"><i>${i+1}</i><span title="${esc(s.name)}">${esc(sn(s.name))}</span><b>${s.tg?'มีเป้า':'—'}</b><small>${fmt(s.stock)}</small></li>`).join('')}</ol></div>`};
+ const cardsSec=`<div class="a8-focussec a8n-cardsec areasum"><div class="as-tools"><button data-areasum-capture>เต็มจอสำหรับแคป No Sales ราย Area</button></div><div class="as-sheet"><p class="a8-sec"><span class="a8-model">Galaxy A08 4G 4/64GB</span>Store No Sales ราย Area <span class="a8-bench">No Sales ${fmt(tot.z)}/${fmt(tot.n)} สาขา (${p1(tot.pct)})</span><span class="a8-ftitle">${mode==='d'?'Daily · ':'Monthly · '}${esc(when)} · เรียง Area ตาม % No Sales · ในกรอบ: สาขามีเป้าก่อน แล้วเรียงตาม Stock</span></p>${nsAreas.length?`<div class="a8-fcards">${nsAreas.map(card).join('')}</div>`:'<p class="a8-empty a8-nsnone">ทุกสาขามียอดแล้ว</p>'}${areas.some(a=>!a.z)?`<p class="a8-note">Area ที่ทุกสาขามียอดแล้ว: ${areas.filter(a=>!a.z).map(a=>esc(an(a.name))).join(', ')}</p>`:''}</div></div>`;
  const modeTog=`<div class="a8-nstog"><button data-a8nsmode="d" aria-pressed="${mode==='d'}">รายวัน</button><button data-a8nsmode="m" aria-pressed="${mode==='m'}">รายเดือน (MTD)</button></div>`;
  const picker=`<label class="a8-pick">${mode==='d'?'วันที่':'ข้อมูลถึงวันที่'} <select id="a8nsDay">${dates.map(d=>`<option value="${d}" ${d===day?'selected':''}>${d}</option>`).join('')}</select></label>`;
  return `<section class="panel areasum a8board a8nsboard"><div class="as-tools">${modeTog}${picker}<button data-areasum-capture>เต็มจอสำหรับแคป</button><button data-print>พิมพ์ / PDF</button></div>
 <div class="as-sheet"><div class="a8-banner"><div><p class="a8-logo">SAMSUNG</p><h2>Galaxy A08 4/64GB · Store No Sales <span>${fmt(tot.n)} สาขา (${esc(IX.file||'Index shop')})</span></h2><p>${mode==='d'?'ยอดขายวันที่ ':'ยอดสะสม '}${esc(when)}</p></div><div class="a8-stamp"><small>NO SALES</small><b>${fmt(tot.z)}/${fmt(tot.n)}</b></div></div>
 <div class="a8-kpis">${kpi('สาขาทั้งหมด',fmt(tot.n))}${kpi('มียอดแล้ว',fmt(tot.sold),'l3')}${kpi('Store No Sales',fmt(tot.z)+' <em>('+p1(tot.pct)+')</em>','l0')}${kpi('No Sales ที่มีเป้า A08',fmt(tot.ztg))}${kpi('Stock ในสาขา No Sales',fmt(tot.stk))}</div>
 <p class="a8-sec"><span class="a8-model">Galaxy A08 4G 4/64GB</span>BY REGION</p>${regT}<div class="a8-gap"></div>
-<p class="a8-sec"><span class="a8-model">Galaxy A08 4G 4/64GB</span>BY AREA</p>${areaT}<div class="a8-gap"></div>
+<p class="a8-sec"><span class="a8-model">Galaxy A08 4G 4/64GB</span>BY AREA</p>${areaT}${cardsSec}<div class="a8-gap"></div>
 <div class="a8-branchhead"><p class="a8-sec"><span class="a8-model">Galaxy A08 4G 4/64GB</span>รายชื่อสาขา No Sales · ${pick?esc(pick):'ทุกพื้นที่'} <span>(${fmt(list.length)} สาขา)</span></p>${pick?'<button data-a8nsarea="">แสดงทุกพื้นที่</button>':'<span class="a8-hint">คลิกชื่อ Area เพื่อดูเฉพาะพื้นที่</span>'}</div>
 <div class="as-wrap">${brT}</div>
 <p class="a8-note">รายชื่อสาขาตาม ${esc(IX.file||'Index shop')} (บริษัท WW ไม่รวม TenTen และ Shop Service ${fmt(IX.shops.length)} สาขา) · ยอด${mode==='d'?'รายวันจาก TSM Manual':'สะสมจาก Data refresh SS + TSM Manual'} เฉพาะ GALAXY A08 4G 4/64GB · No Sales = ยังไม่มียอดในช่วงที่เลือก · Stock 4/64 ณ ${B.stock?esc(B.stock.date+' '+B.stock.time):'—'} · เป้า A08 จาก ${esc((B.targets||{}).file||'—')}</p>
