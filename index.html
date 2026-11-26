@@ -1983,6 +1983,19 @@ function pdtPage(ps,t){
   '🏪 Type Shop ที่ทำได้ถึงค่าเฉลี่ยมากสุด',...typeR.map(x=>`• ${x.k} ${x.ok}/${x.n} สาขา (${p1(x.ok/x.n*100)})`),'',
   '🔻 สาขาที่ห่างค่าเฉลี่ยกลุ่มมากสุด',...worst.map(r=>`• ${r.name} (${r.area}) ${sg(r.gapP)} · ทำได้ ${fmt(r.ratio*100,0)}% ของค่าเฉลี่ย`),'',
   '⭐ สาขา PDT สูงสุดเทียบกลุ่ม',...star.map(r=>`• ${r.name} ${fmt(r.ratio*100,0)}% (${r.grp})`)].join('\n');
+ const TT=rows.reduce((a,r)=>({tg:a.tg+r.tg,act:a.act+r.act,rr:a.rr+r.rr,lm:a.lm+r.lm}),{tg:0,act:0,rr:0,lm:0});
+ const okOf=l=>l.filter(r=>r.cls==='Above Average'||r.cls==='Average').length,dnOf=l=>l.filter(r=>r.cls==='Below Average'||r.cls==='No Sales').length;
+ const regL=[...new Set(rows.map(r=>r.region))].sort().map(k=>{const l=rows.filter(r=>r.region===k),tg=l.reduce((a,r)=>a+r.tg,0),rr=l.reduce((a,r)=>a+r.rr,0);return `▪️ ${k}: %Runrate ${p1(tg?rr/tg*100:null)} · ถึงค่าเฉลี่ย ${okOf(l)}/${l.length} สาขา`});
+ const arL=[...new Set(rows.map(r=>r.area))].map(k=>{const l=rows.filter(r=>r.area===k),tg=l.reduce((a,r)=>a+r.tg,0),rr=l.reduce((a,r)=>a+r.rr,0);return {k,ach:tg?rr/tg*100:null,ok:okOf(l),n:l.length,dn:dnOf(l)}}).sort((a,b)=>(b.ach||0)-(a.ach||0));
+ const unitW=u==='n'?' บาท':' เครื่อง';
+ const line=[`📣 สรุปภาพรวม Samsung · ${thDate(cut,{day:'numeric',month:'short',year:'2-digit'})}`,`(${uL} · ${fmt(total)} สาขา)`,'',
+  `💰 ยอดขาย ${n0(TT.act)}${unitW} จากเป้า ${n0(TT.tg)}`,`📈 Runrate ${n0(TT.rr)} = ${p1(TT.tg?TT.rr/TT.tg*100:null)} ของเป้า · ขาด ${n0(Math.max(0,TT.tg-TT.rr))}`,`🔁 เทียบทั้งเดือนก่อน ${TT.lm?(TT.rr>=TT.lm?'+':'')+fmt((TT.rr-TT.lm)/TT.lm*100,1)+'%':'—'}`,'',
+  `🏅 Productivity (PDT) เทียบค่าเฉลี่ยกลุ่ม`,`🟢 Above ${cnt('Above Average')} · 🔵 Average ${cnt('Average')} · 🟠 Below ${cnt('Below Average')} · ⚪ No Sales ${cnt('No Sales')}`,`→ ถึงค่าเฉลี่ยขึ้นไป ${p1(okOf(rows)/Math.max(1,total)*100)}`,'',
+  '🗺 ราย Region',...regL,'',
+  '👍 Area %Runrate สูงสุด',...arL.slice(0,3).map(x=>`• ${x.k} ${p1(x.ach)} (ถึงค่าเฉลี่ย ${x.ok}/${x.n})`),
+  '👀 Area ต้องเร่ง',...arL.slice(-3).reverse().map(x=>`• ${x.k} ${p1(x.ach)} (ต่ำกว่าค่าเฉลี่ย ${x.dn}/${x.n})`),'',
+  '🎯 สาขาที่ต้องโฟกัส (ห่างค่าเฉลี่ยกลุ่มมากสุด)',...worst.slice(0,3).map(r=>`• ${r.name} ${fmt(r.ratio*100,0)}% ของค่าเฉลี่ย`),'',
+  '🙏 ฝากทุกพื้นที่เร่งสาขาที่ต่ำกว่าค่าเฉลี่ยให้ถึงระดับกลุ่มค่ะ'].join('\n');
  const kp=(c)=>`<button class="pdt-kpi ${CC[c]}" data-pdtc="${c}" aria-pressed="${cf===c}"><small>${TH[c]}</small><b>${cnt(c)}</b><em>${c} · ${p1(cnt(c)/Math.max(1,total)*100)}</em></button>`;
  const sec=x=>`<p class="a8-sec">${x}</p>`;
  return `<section class="panel areasum a8board pdtboard"><div class="as-tools"><span class="ov-eod-unit">${[['n','Net Amount'],['q','QTY']].map(([k,l])=>`<button data-pdtunit="${k}" aria-pressed="${u===k}">${l}</button>`).join('')}</span><button data-areasum-capture>เต็มจอสำหรับแคป</button><button data-print>พิมพ์ / PDF</button></div><div class="as-sheet">
@@ -1995,7 +2008,7 @@ ${sec('กลุ่มเทียบค่าเฉลี่ย PDT (Zone · Si
 <div class="a8-branchhead">${sec(`BY SHOP · ${F?esc(F.v):'ทุกสาขา'}${cf?' · '+esc(cf):''} <span>(${list.length} สาขา)</span>`)}${F||cf?'<button data-pdtf="">แสดงทั้งหมด</button>':''}</div>
 <div class="as-wrap">${shopT}</div>
 <p class="a8-note">PDT (Productivity) = Runrate ของสาขา เทียบกับค่าเฉลี่ย Runrate ของสาขาที่มียอดในกลุ่มเดียวกัน (Zone BMA/UPC × Size S/M/L × Type Shop) · Above Average > 105% · Average 95–105% · Below Average < 95% · No Sales = ไม่มียอดในเดือน · GAP.PDT = Runrate − ค่าเฉลี่ยกลุ่ม · GAP.Target = Runrate − Target · %Achieve = Runrate ÷ Target · %MoM = Runrate เทียบยอดทั้งเดือนก่อน · สาขาตาม Index shop · ใช้ตัวกรองด้านบนได้</p>
-<div class="ap-sms"><div class="ap-sms-head"><h3 class="ap-h3">SMS สรุป PDT <small>คัดลอกไปส่งต่อได้ทันที</small></h3><button data-areasum-copy>คัดลอกข้อความ</button><span class="ap-copy-status"></span></div><textarea class="ap-sms-text" readonly rows="${sms.split('\n').length+1}">${esc(sms)}</textarea></div></div></section>`;
+<div class="ap-sms"><div class="ap-sms-head"><h3 class="ap-h3">💬 LINE สรุปภาพรวม <small>ยอดขาย + PDT สำหรับส่งกลุ่ม LINE</small></h3><button data-areasum-copy>คัดลอกข้อความ</button><span class="ap-copy-status"></span></div><textarea class="ap-sms-text" readonly rows="${line.split('\n').length+1}">${esc(line)}</textarea></div><div class="ap-sms"><div class="ap-sms-head"><h3 class="ap-h3">SMS สรุป PDT <small>คัดลอกไปส่งต่อได้ทันที</small></h3><button data-areasum-copy>คัดลอกข้อความ</button><span class="ap-copy-status"></span></div><textarea class="ap-sms-text" readonly rows="${sms.split('\n').length+1}">${esc(sms)}</textarea></div></div></section>`;
 }
 function a08EodBrief(){
  const thD=d=>thDate(d,{day:'numeric',month:'short',year:'2-digit'});
