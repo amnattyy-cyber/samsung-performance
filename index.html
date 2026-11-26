@@ -609,6 +609,10 @@ main .insight-mini td:last-child:not(:first-child){white-space:normal}
 .s26board table.s26-mini td,.s26board table.s26-mini th{text-align:left!important}.s26board table.s26-mini td:last-child,.s26board table.s26-mini th:last-child{text-align:center!important}
 .s26board table.s26-mini tr.s26-tot td{background:#1428a0!important;color:#fff!important;font-weight:800;font-size:15px}.s26board table.s26-mini tr.s26-tot td b{color:#fff}
 .s26board .s26-mcols table+table{border-left:1px solid #c7d6ff}
+.a8eod{border:1.5px solid #1428a0!important}.a8eod-head{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}.a8eod-head h2{color:#1428a0}
+.a8eod-head button{background:#1428a0;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.a8eod-body p{margin:6px 0;font-size:14.5px;line-height:1.55;color:#1e293b}.a8eod-body p b{color:#0b1f5c}.a8eod-body p.a8eod-sub{margin-left:18px;color:#334155;font-size:14px}
+.a8eod-body h4{margin:14px 0 4px;color:#1428a0;font-size:15.5px}.a8eod-body ul{margin:0;padding-left:22px}.a8eod-body li{margin:4px 0;font-size:14.5px;line-height:1.5}
 .s26board .s26-dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:1px solid #94a3b8}
 .s26board .s26-sumwrap{margin:0 0 6px}.s26board .s26-sumwrap>.as-tools{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:6px}.s26board .s26-tooltitle{margin-right:auto;font-weight:700;color:#1428a0}
 .s26board .s26-sum{background:#fff;border:1px solid #dbe5ff;border-radius:16px;padding:18px 20px;box-shadow:0 2px 10px rgba(20,40,160,.06)}
@@ -1859,6 +1863,89 @@ ${a8BranchSection(focus.map(x=>{const tg=tgt.get(x.code)||0,ac=sales[x.code]||0;
 <p class="a8-note">ยอดขายจาก ${esc(rec.file||'TSM Manual')} (บิลชำระแล้ว) เฉพาะ ${esc(B.sku||'GALAXY A08 4G 4/64GB')} · Target รายวัน = ${T4?'Target '+esc(B.sku)+' เดือน ('+esc(T4.file)+')':'Target A08 4G เดือน'} ÷ ${nd} วัน · ยอดขายนับรวมทุกสาขาตามรายชื่อ Index (${fmt(total.shops)} สาขา) · เป้านับเฉพาะสาขาที่มีเป้า ${T4?'A08 4/64':'A08'} (ไม่นับ 4 สาขาที่ตัดออก) · Stock 4/64 ณ ${B.stock?esc(B.stock.date+' '+B.stock.time):'—'} · จัดอันดับตาม %Ach (เท่ากันได้อันดับเดียวกัน)</p></div></div></div></section>`;
 }
 const A08_MONTH_TAB=15;
+function a08EodBrief(){
+ const thD=d=>thDate(d,{day:'numeric',month:'short',year:'2-digit'});
+ const B=D.a08Board||{},R=B.refresh||{asOf:'',days:{}};
+ const daily=d=>d<=R.asOf?(R.days[d]||{}):((B.days&&B.days[d]&&B.days[d].sales)||{});
+ const all=[...new Set([...Object.keys(R.days||{}),...Object.keys(B.days||{}).filter(d=>d>R.asOf)])].sort();
+ if(!all.length)return '';
+ const mo=all[all.length-1].slice(0,7),cut=all[all.length-1],nd=new Date(Date.UTC(+mo.slice(0,4),+mo.slice(5,7),0)).getUTCDate(),span=+cut.slice(-2),rem=nd-span;
+ const tgt=new Map(),T4=B.targets&&B.targets.month===mo?B.targets:null;if(T4)for(const [c,q] of Object.entries(T4.shops))if(q>0)tgt.set(c,q);
+ const region=$('#region').value,areaF=$('#area').value,type=$('#type').value;
+ const focus=(INDEX_SHOPS.size?[...INDEX_SHOPS]:[...tgt.keys()]).filter(c=>shops.has(c)&&!NO_SALES_EXCLUDE.has(c)).map(c=>shops.get(c)).filter(s=>(!region||regionOf(s.area)===region)&&(!areaF||s.area===areaF)&&(!type||s.type===type));
+ const F=new Set(focus.map(s=>s.code)),dk=i=>mo+'-'+String(i).padStart(2,'0');
+ const byDay=[],shopDay={};for(let i=1;i<=span;i++){const d=dk(i),m=daily(d);let t=0;for(const [c,q] of Object.entries(m))if(F.has(c)){t+=q;(shopDay[c]=shopDay[c]||{})[d]=q}byDay.push({d,q:t})}
+ const sumShop=(c,a,b)=>{let t=0;const m=shopDay[c]||{};for(const [d,q] of Object.entries(m))if(d>=a&&d<=b)t+=q;return t};
+ const n0=v=>fmt(Math.round(v)),sg=v=>(v>0?'+':v<0?'−':'')+fmt(Math.abs(Math.round(v))),pc=v=>v==null||!isFinite(v)?'—':(v>0?'+':'')+fmt(v,1)+'%',p1=v=>v==null||!isFinite(v)?'—':fmt(v,1)+'%';
+ const sn=n=>String(n).replace(/^True (Move )?Shop /i,'').trim();
+ const TG=focus.reduce((t,s)=>t+(tgt.get(s.code)||0),0),A=byDay.reduce((t,x)=>t+x.q,0),ach=TG?A/TG*100:null,timeP=span/nd*100,rr=A/span*nd,gap=Math.max(0,TG-A),need=rem?gap/rem:0;
+ const l7=byDay.slice(-7),avg7=l7.reduce((t,x)=>t+x.q,0)/Math.max(1,l7.length),f7=A+avg7*rem;
+ const tday=TG/nd,last=byDay[byDay.length-1],hit=byDay.filter(x=>x.q>=tday).length,best=byDay.reduce((b,x)=>x.q>b.q?x:b,byDay[0]);
+ // weeks (Mon-Sun)
+ const dow=d=>(new Date(d+'T00:00:00Z').getUTCDay()+6)%7,isoW=d=>{const t=new Date(d+'T00:00:00Z');t.setUTCDate(t.getUTCDate()+3-dow(d));const y=new Date(Date.UTC(t.getUTCFullYear(),0,4));return 1+Math.round(((t-y)/864e5-3+(y.getUTCDay()+6)%7)/7)};
+ const weeks=[];for(const x of byDay){const w=isoW(x.d);if(!weeks.length||weeks[weeks.length-1].w!==w)weeks.push({w,q:0,n:0});weeks[weeks.length-1].q+=x.q;weeks[weeks.length-1].n++}
+ const full=weeks.filter((w,i)=>i<weeks.length-1);const wTrend=full.length>=2?(full.every((w,i)=>!i||w.q<full[i-1].q)?'ลดลงต่อเนื่อง':full.every((w,i)=>!i||w.q>full[i-1].q)?'เพิ่มขึ้นต่อเนื่อง':'ขึ้นลงสลับกัน'):'';
+ // WoW: this week Mon..cut vs previous week same days
+ const ws=add(cut,-dow(cut)),pws=add(ws,-7),pwe=add(cut,-7);
+ const wkOf=(c,a,b)=>{let t=0;for(let d=a;d<=b;d=add(d,1)){const m=d.slice(0,7)===mo?(shopDay[c]||{})[d]||0:0;t+=m}return t};
+ const wkPrevAvail=pws.slice(0,7)===mo;
+ // MoM (A08 4G all capacities from main data, same day range)
+ const pm=(()=>{const t=new Date(Date.UTC(+mo.slice(0,4),+mo.slice(5,7)-2,1));return t.toISOString().slice(0,7)})(),pmEnd=pm+'-'+String(Math.min(span,new Date(Date.UTC(+pm.slice(0,4),+pm.slice(5,7),0)).getUTCDate())).padStart(2,'0');
+ const momShop={},momCur={};for(const [d,c,m,src,q] of D.sales){if(m!=='GALAXY A08 4G'||!F.has(c))continue;if(d>=pm+'-01'&&d<=pmEnd)momShop[c]=(momShop[c]||0)+q;if(d>=mo+'-01'&&d<=cut)momCur[c]=(momCur[c]||0)+q}
+ const momHas=Object.keys(momShop).length>0;
+ // shop & area rows
+ const rows=focus.map(s=>{const c=s.code,mtd=sumShop(c,mo+'-01',cut),tw=wkOf(c,ws,cut),lw=wkOf(c,pws,pwe),l28=(()=>{let t=0;const a=add(cut,-27);for(const [d,q] of Object.entries(shopDay[c]||{}))if(d>=a)t+=q;return t})(),st=(B.stock&&B.stock.shops[c])||0,wk=l28/4;
+  return {c,name:sn(s.name),area:s.area,tg:tgt.get(c)||0,mtd,tw,lw,mC:momCur[c]||0,mP:momShop[c]||0,st,wk,cover:wk>0?st/wk:null}});
+ const areas=[...new Set(rows.map(r=>r.area))].sort((a,b)=>areaOrder(a)-areaOrder(b)).map(a=>{const l=rows.filter(r=>r.area===a),o={name:a,l};for(const k of ['tg','mtd','tw','lw','mC','mP','st','wk'])o[k]=l.reduce((t,r)=>t+r[k],0);o.ach=o.tg?o.mtd/o.tg*100:null;o.rr=o.ach==null?null:o.ach*nd/span;o.avg=o.mtd/span;o.gap=Math.max(0,o.tg-o.mtd);o.wow=o.lw?(o.tw-o.lw)/o.lw*100:null;return o});
+ const tA=areas.filter(a=>a.tg>0),bk=[tA.filter(a=>a.rr>=100).length,tA.filter(a=>a.rr>=90&&a.rr<100).length,tA.filter(a=>a.rr>=75&&a.rr<90).length,tA.filter(a=>a.rr<75).length];
+ const worstShop=a=>{const l=a.l.filter(r=>r.tg>0).map(r=>({...r,a:r.mtd/r.tg*100*nd/span})).sort((x,y)=>x.a-y.a);return l[0]};
+ const drag=[...tA].sort((a,b)=>a.rr-b.rr).slice(0,2),good=[...tA].sort((a,b)=>b.rr-a.rr).slice(0,2);
+ const TW=rows.reduce((t,r)=>t+r.tw,0),LW=rows.reduce((t,r)=>t+r.lw,0),wow=LW?(TW-LW)/LW*100:null;
+ const MC=rows.reduce((t,r)=>t+r.mC,0),MP=rows.reduce((t,r)=>t+r.mP,0),mom=MP?(MC-MP)/MP*100:null;
+ const decomp=(kc,kp,label)=>{const ad=areas.map(a=>({a,dv:a[kc]-a[kp],pct:a[kp]?(a[kc]-a[kp])/a[kp]*100:null})),dn=ad.filter(x=>x.dv<0).sort((x,y)=>x.dv-y.dv),up=ad.filter(x=>x.dv>0).sort((x,y)=>y.dv-x.dv),tdn=dn.reduce((t,x)=>t+x.dv,0),tup=up.reduce((t,x)=>t+x.dv,0);
+  const shopsOf=(x,neg)=>x.a.l.map(r=>({n:r.name,dv:r[kc]-r[kp]})).filter(r=>neg?r.dv<0:r.dv>0).sort((p,q)=>neg?p.dv-q.dv:q.dv-p.dv).slice(0,3).map(r=>`${r.n} ${sg(r.dv)}`).join(', ');
+  const out=[];if(dn[0])out.push(`▼ Area ที่ลดลงมากสุด (ฉุดมากสุด): ${dn[0].a.name} ${sg(dn[0].dv)} (${label} ${pc(dn[0].pct)}) = ${fmt(dn[0].dv/tdn*100,0)}% ของยอดที่ลดลงทั้งหมด ← สาขา ${shopsOf(dn[0],true)}${dn.length>1?' · รองลงมา '+dn.slice(1,3).map(x=>`${x.a.name} ${sg(x.dv)}`).join(', '):''}`);
+  if(up[0])out.push(`▲ Area ที่เพิ่มขึ้นมากสุด: ${up[0].a.name} ${sg(up[0].dv)} (${label} ${pc(up[0].pct)}) = ${fmt(up[0].dv/tup*100,0)}% ของยอดที่เพิ่มขึ้นทั้งหมด ← สาขา ${shopsOf(up[0],false)}`);
+  out.push(`Area: เพิ่มที่ ${up.slice(0,2).map(x=>`${x.a.name} ${sg(x.dv)}`).join(', ')||'—'} · ลดที่ ${dn.slice(0,2).map(x=>`${x.a.name} ${sg(x.dv)}`).join(', ')||'—'}`);
+  const sAll=rows.map(r=>({n:r.name,a:r.area,dv:r[kc]-r[kp]})),sUp=sAll.filter(r=>r.dv>0).sort((p,q)=>q.dv-p.dv).slice(0,3),sDn=sAll.filter(r=>r.dv<0).sort((p,q)=>p.dv-q.dv).slice(0,3);
+  out.push(`สาขา เพิ่ม: ${sUp.map(r=>`${r.n} ${sg(r.dv)}`).join(' · ')||'—'}  |  ลด: ${sDn.map(r=>`${r.n} ${sg(r.dv)}`).join(' · ')||'—'}`);return {out,dn,up}};
+ const W=decomp('tw','lw','%WoW'),M=momHas?decomp('mC','mP','%MoM'):null;
+ // stock
+ const ST=rows.reduce((t,r)=>t+r.st,0),WK=rows.reduce((t,r)=>t+r.wk,0),cov=WK>0?ST/WK:null;
+ const refill=rows.filter(r=>r.wk>=1&&(r.st===0||r.cover<1.5)).sort((a,b)=>b.wk-a.wk).slice(0,5),drain=rows.filter(r=>r.st>=5&&(r.cover==null||r.cover>8)).sort((a,b)=>b.st-a.st).slice(0,5);
+ const noStockSell=rows.filter(r=>r.st===0&&r.wk>0).length,noStock=rows.filter(r=>r.st===0).length;
+ const rf=r=>`${r.name} (${r.st===0?'ไม่มีของ':'เหลือ '+fmt(r.st)+' · '+fmt(r.cover,1)+' wk'} · ขาย ${fmt(r.wk,1)}/wk)`,dr=r=>`${r.name} (Stock ${fmt(r.st)} · ${r.cover==null?'ไม่มียอดขาย 28 วัน':fmt(r.cover,1)+' wk'})`;
+ const status=ach==null?'—':ach>=timeP?'ตามแผน':ach>=timeP*.9?'ช้ากว่าแผนเล็กน้อย':'ช้ากว่าแผน';
+ const thd=d=>+d.slice(-2);
+ const L=[];
+ L.push(['สถานะ',`Actual ${n0(A)} จาก Target ${n0(TG)} เครื่อง (${p1(ach)}) · เวลาผ่านไป ${fmt(timeP,0)}% → ${status} · คาดปิดเดือน ${n0(rr)} (${p1(TG?rr/TG*100:null)})${rem?` · ยังขาด ${n0(gap)} ต้องทำเฉลี่ย ${fmt(need,1)}/วัน ในอีก ${rem} วัน (ยอดเฉลี่ย 7 วันล่าสุด ${fmt(avg7,1)}/วัน ${avg7>=need?'พอ':'ยังไม่พอ'})`:''}`]);
+ if(rem)L.push(['คาดการณ์',`ถ้าขายเท่าเฉลี่ย 7 วันล่าสุด (${fmt(avg7,1)}/วัน) จะปิดเดือนที่ ${n0(f7)} = ${p1(TG?f7/TG*100:null)} ของ Target · ${f7>=TG?'เกินเป้า '+n0(f7-TG):'ขาด '+n0(TG-f7)}`]);
+ L.push(['รายวัน',`ล่าสุด (วันที่ ${thd(last.d)}) ${n0(last.q)} · Target/วัน ${fmt(tday,1)} · ผ่าน Target รายวัน ${hit}/${span} วัน · วันที่ขายดีสุด วันที่ ${thd(best.d)} (${n0(best.q)})`]);
+ L.push(['รายสัปดาห์',weeks.map((w,i)=>`W${w.w}${i===weeks.length-1?' (WTD)':w.n<7?' ('+w.n+' วัน)':''} ${n0(w.q)}`).join(' → ')+(wTrend?' · '+wTrend:'')]);
+ L.push(['แนวโน้ม',`%MoM ${momHas?pc(mom):'—'} · %WoW ${wkPrevAvail?pc(wow):'—'} → ${(mom<0&&wow<0)?'ยอดลดลงทั้งเทียบเดือนก่อนและสัปดาห์ก่อน':(mom>0&&wow>0)?'ยอดเพิ่มขึ้นทั้งเทียบเดือนก่อนและสัปดาห์ก่อน':wow<0?'สัปดาห์นี้ชะลอลง':'สัปดาห์นี้ดีขึ้น'}`]);
+ L.push([`ภาพรวม Area (${tA.length})`,`ถึง Target ${bk[0]} · ใกล้ถึง 90–99% ${bk[1]} · 75–89% ${bk[2]} · ต้องเร่ง <75% ${bk[3]} (ตาม %Runrate)`]);
+ L.push(['Area ที่ฉุด',drag.map(a=>{const w=worstShop(a);return `${a.name} ${p1(a.rr)} (Target ${n0(a.tg)} ขายได้ ${n0(a.mtd)})${w?` ← เพราะ ${w.name} ${p1(w.a)}`:''}`}).join(' · ')]);
+ L.push(['Area ที่ดี',good.map(a=>`${a.name} ${p1(a.rr)} (${n0(a.mtd)})`).join(' · ')]);
+ const sharp=areas.filter(a=>a.wow!=null&&a.wow<=-30&&a.lw>=5).sort((a,b)=>a.wow-b.wow).slice(0,3);
+ if(sharp.length)L.push(['ข้อสังเกต',`%WoW ลดลงแรง: ${sharp.map(a=>`${a.name} ${pc(a.wow)}`).join(', ')} — ควรเช็ก Stock / การจัดวาง / โปรโมชั่น`]);
+ if(M){L.push([`%MoM ${pc(mom)} มาจาก`,`A08 4G ทุกความจุ ช่วงวันที่ 1–${span} เดือนนี้ ${n0(MC)} เทียบเดือนก่อน ${n0(MP)} (${sg(MC-MP)})`]);M.out.forEach(t=>L.push(['',t]))}
+ if(wkPrevAvail){L.push([`%WoW ${pc(wow)} มาจาก`,`สัปดาห์นี้ ${n0(TW)} เทียบสัปดาห์ก่อน ${n0(LW)} ช่วงวันเดียวกัน (${sg(TW-LW)})`]);W.out.forEach(t=>L.push(['',t]))}
+ L.push(['Stock',`${n0(ST)} เครื่อง · พอขาย ${cov==null?'—':fmt(cov,1)+' สัปดาห์'} (ยอดเฉลี่ย 28 วัน) · ไม่มี Stock ${noStock} สาขา (ในนี้มียอดขาย ${noStockSell} สาขา) · Stock ณ ${B.stock?thD(B.stock.date)+' '+B.stock.time+' น.':'—'}`]);
+ if(refill.length)L.push(['เร่งเติมของ',refill.map(rf).join(' · ')]);
+ if(drain.length)L.push(['เร่งระบายของ',drain.map(dr).join(' · ')]);
+ const nw=isoW(add(cut,7-dow(cut))),nDays=Math.min(7,rem),needW=need*nDays;
+ const AP=[];
+ if(rem){AP.push(`${rem<=7?'ยอดที่ต้องทำในอีก '+rem+' วันที่เหลือของเดือน':'ยอดที่ต้องทำสัปดาห์หน้า'} ${n0(needW)} (${fmt(need,1)}/วัน) — ${avg7>0?(need>avg7?'ต้องเพิ่มจากเฉลี่ย 7 วันล่าสุด +'+fmt((need/avg7-1)*100,0)+'%':'เฉลี่ย 7 วันล่าสุดทำได้พอแล้ว รักษาระดับไว้'):''}`);
+  [...tA].filter(a=>a.gap>0).sort((a,b)=>b.gap-a.gap).slice(0,2).forEach(a=>{const nd2=a.gap/rem;AP.push(`เร่ง Area ${a.name} ขาด ${n0(a.gap)} — ต้องทำ ${fmt(nd2,1)}/วัน (ตอนนี้เฉลี่ย ${fmt(a.avg,1)}/วัน${a.avg>0?' ต้องเพิ่ม +'+fmt(Math.max(0,(nd2/a.avg-1)*100),0)+'%':''})`)})}
+ if(wkPrevAvail&&W.dn[0])AP.push(`แก้ Area ${W.dn[0].a.name} ที่ %WoW ลดลงมากสุด (${sg(W.dn[0].dv)}) — เช็ก Stock / การจัดวาง / โปรโมชั่น / พนักงานขาย`);
+ if(wkPrevAvail&&W.up[0])AP.push(`ต่อยอด Area ${W.up[0].a.name} ที่เพิ่มขึ้นมากสุด (${sg(W.up[0].dv)}) — ดู Stock ให้พอขายทั้งสัปดาห์`);
+ if(refill.length)AP.push(`เติม Stock ด่วน: ${refill.slice(0,3).map(rf).join(' · ')}`);
+ if(drain.length)AP.push(`ระบาย Stock ค้าง (ย้ายไปสาขาที่ขายได้): ${drain.slice(0,3).map(dr).join(' · ')}`);
+ const text=['สรุป · Galaxy A08 4G 4/64GB · QTY (เครื่อง)',`ข้อมูลถึง ${thD(cut)}${B.days&&B.days[cut]&&cut>R.asOf?' '+B.days[cut].time+' น.':''}`,...L.map(([k,v])=>k?`${k}: ${v}`:v),`Action Plan สัปดาห์หน้า (W${nw}):`,...AP.map(t=>'• '+t)].join('\n');
+ const html=`<section class="panel a8eod"><div class="a8eod-head"><div><h2>สรุปสิ้นวัน · Galaxy A08 4G 4/64GB</h2><p class="note">QTY (เครื่อง) · ข้อมูลถึง ${esc(thD(cut))}${B.days&&B.days[cut]&&cut>R.asOf?' '+esc(B.days[cut].time)+' น.':''} · ${fmt(focus.length)} สาขาตาม Index · Target ${n0(TG)}${momHas?' · %MoM ใช้ยอด A08 4G ทุกความจุ':''}</p></div><button data-a8eod-copy>คัดลอกสรุป</button><span class="ap-copy-status"></span></div>
+<div class="a8eod-body">${L.map(([k,v])=>`<p class="${k?'':'a8eod-sub'}">${k?`<b>${esc(k)}:</b> `:''}${esc(v).replace(/(▼[^:]*:|▲[^:]*:)/,'<b>$1</b>')}</p>`).join('')}<h4>Action Plan สัปดาห์หน้า (W${nw}):</h4><ul>${AP.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div><textarea class="a8eod-text" hidden>${esc(text)}</textarea></section>`;
+ return html;
+}
 function a08MonthPage(){
  const B=D.a08Board||{},R=B.refresh||{asOf:'',days:{}};
  const daily=d=>d<=R.asOf?(R.days[d]||{}):((B.days&&B.days[d]&&B.days[d].sales)||{});
@@ -1971,7 +2058,7 @@ async function exportSheetPng(p,btn){
  }catch(e){console.error(e);sh.style.zoom=z;btn.textContent='สร้างภาพไม่สำเร็จ';btn.disabled=false;setTimeout(()=>btn.textContent=old,3000);return}
  sh.style.zoom=z;btn.textContent=old;btn.disabled=false
 }
-function render(){const campaign=state.tab===CAMPAIGN_TAB;document.body.classList.toggle('campaign-view',campaign);syncTargetShops();syncSeriesModels();const a08=state.tab===A08_TAB;$('#model').disabled=$('#series').disabled=a08;let t=periods(),ps=chosen(a08?'GALAXY A08 4G':undefined),m=calc(ps),ar=groups(ps,'area'),ss=groups(ps,'shop');$('.tabs').innerHTML=['Overview Area','By Model','Ranking','Daily & Heat Map','MoM & WoW','No Sales & Stock','PC vs No PC','Promotion','รายงานผู้บริหาร','ตรวจสอบข้อมูล','Price Tier','A08 Performance','Campaign','สรุปราย Area','A08 Daily Board','A08 Monthly Board','A08 Store No Sales','S26U 512 Upsize'].map((x,i)=>`<button data-tab="${i}" class="${state.tab===i?'on':''}">${x}</button>`).join('');$('#cards').classList.toggle('overview-cards',state.tab===0);$('#cards').classList.toggle('a08-cards-hidden',a08);$('#cards').innerHTML=a08||campaign?'':overviewCards(m,ar,t);let html='';currentExport=[];if(campaign){$('#content').innerHTML=samsungCampaignPage();bind();bindCampaignPosters();return}if(a08){$('#content').innerHTML=a08Page(ps,t);bind();return}if(state.tab===S26U_TAB){$('#cards').innerHTML='';$('#content').innerHTML=s26uPage();bind();return}if(state.tab===A08_NS_TAB){$('#cards').innerHTML='';$('#content').innerHTML=a08NoSalesPage();bind();return}if(state.tab===A08_MONTH_TAB){$('#cards').innerHTML='';$('#content').innerHTML=a08MonthPage();bind();return}if(state.tab===A08_BOARD_TAB){$('#cards').innerHTML='';$('#content').innerHTML=a08BoardPage();bind();return}if(state.tab===AREA_SUMMARY_TAB){$('#cards').innerHTML='';$('#content').innerHTML=areaSummaryPage(ps,t);bind();return}
+function render(){const campaign=state.tab===CAMPAIGN_TAB;document.body.classList.toggle('campaign-view',campaign);syncTargetShops();syncSeriesModels();const a08=state.tab===A08_TAB;$('#model').disabled=$('#series').disabled=a08;let t=periods(),ps=chosen(a08?'GALAXY A08 4G':undefined),m=calc(ps),ar=groups(ps,'area'),ss=groups(ps,'shop');$('.tabs').innerHTML=['Overview Area','By Model','Ranking','Daily & Heat Map','MoM & WoW','No Sales & Stock','PC vs No PC','Promotion','รายงานผู้บริหาร','ตรวจสอบข้อมูล','Price Tier','A08 Performance','Campaign','สรุปราย Area','A08 Daily Board','A08 Monthly Board','A08 Store No Sales','S26U 512 Upsize'].map((x,i)=>`<button data-tab="${i}" class="${state.tab===i?'on':''}">${x}</button>`).join('');$('#cards').classList.toggle('overview-cards',state.tab===0);$('#cards').classList.toggle('a08-cards-hidden',a08);$('#cards').innerHTML=a08||campaign?'':overviewCards(m,ar,t);let html='';currentExport=[];if(campaign){$('#content').innerHTML=samsungCampaignPage();bind();bindCampaignPosters();return}if(a08){$('#content').innerHTML=a08Page(ps,t);bind();return}if(state.tab===S26U_TAB){$('#cards').innerHTML='';$('#content').innerHTML=s26uPage();bind();return}if(state.tab===A08_NS_TAB){$('#cards').innerHTML='';$('#content').innerHTML=a08NoSalesPage();bind();return}if(state.tab===A08_MONTH_TAB){$('#cards').innerHTML='';$('#content').innerHTML=a08MonthPage()+a08EodBrief();bind();return}if(state.tab===A08_BOARD_TAB){$('#cards').innerHTML='';$('#content').innerHTML=a08BoardPage()+a08EodBrief();bind();return}if(state.tab===AREA_SUMMARY_TAB){$('#cards').innerHTML='';$('#content').innerHTML=areaSummaryPage(ps,t);bind();return}
 if(state.tab===0)html=overviewSalesPanels(ps,t)+`<div class="three">${panel('%Runrate by Area','100% = ถึงเป้าตามอัตราขายปัจจุบัน',bars(ar,'rr'))}${panel('%MoM by Area',t.ps+' – '+t.pe+' เทียบ '+t.start+' – '+t.cut,bars(ar,'mom'))}${panel('%WoW by Area',t.ws+' – '+t.we+' เทียบ '+t.pws+' – '+t.pwe,bars(ar,'wow'))}</div>`+panel('Area Performance','กดชื่อพื้นที่เพื่อดูสาขา · Stock/L4W ใช้ช่วงล่าสุดเสมอ',perf(ar,'area'))+($('#area').value?panel('Shop Performance','กดสาขาเพื่อดูรายรุ่น',perf(ss,'shop')):'');
 if(state.tab===1){
  const view=modelSeriesData(ps);
@@ -2075,7 +2162,7 @@ function bindDashboardPrintReport(){
 function bind(){
  document.querySelectorAll('.areasum>.as-tools').forEach(t=>{if(t.querySelector('[data-areasum-png]'))return;const b=document.createElement('button');b.type='button';b.dataset.areasumPng='1';b.textContent='⬇ ภาพ PNG (ชัด)';b.title='ดาวน์โหลดเป็นภาพความละเอียดสูง';b.onclick=()=>exportSheetPng(t.parentElement,b);const cap=t.querySelector('[data-areasum-capture]');cap?cap.after(b):t.appendChild(b)});
  tableCsvButtons();
- document.querySelectorAll('[data-a8ns]').forEach(b=>b.onclick=()=>{state.a8NsOnly=b.dataset.a8ns==='1';state.a8All=b.dataset.a8ns==='2';render();const el=document.getElementById('a8-branches');if(el)el.scrollIntoView({block:'start'})});document.querySelectorAll('[data-a8region]').forEach(b=>b.onclick=()=>{const v=b.dataset.a8region;state.a8Region=state.a8Region===v&&!state.a8Area?'':v;state.a8Area='';render();const el=document.getElementById('a8-branches');if(el&&state.a8Region)el.scrollIntoView({behavior:'smooth',block:'start'})});document.querySelectorAll('[data-a8area]').forEach(b=>b.onclick=()=>{const v=b.dataset.a8area;state.a8Area=v&&state.a8Area!==v?v:'';if(!v)state.a8Region='';render();const el=document.getElementById('a8-branches');if(el&&state.a8Area)el.scrollIntoView({behavior:'smooth',block:'start'})});document.querySelectorAll('[data-a8nsmode]').forEach(b=>b.onclick=()=>{state.a8nsMode=b.dataset.a8nsmode;render()});document.querySelectorAll('[data-s26f]').forEach(b=>b.onclick=()=>{state.s26F=b.dataset.s26f;render()});const s26d=$('#s26Day');if(s26d)s26d.onchange=()=>{state.s26Day=s26d.value;render()};document.querySelectorAll('[data-s26area]').forEach(b=>b.onclick=()=>{const v=b.dataset.s26area;state.s26Area=v&&state.s26Area!==v?v:'';render()});const a8n=$('#a8nsDay');if(a8n)a8n.onchange=()=>{state.a8nsDay=a8n.value;render()};document.querySelectorAll('[data-a8nsarea]').forEach(b=>b.onclick=()=>{const v=b.dataset.a8nsarea;state.a8nsArea=v&&state.a8nsArea!==v?v:'';render()});const a8m=$('#a08MDay');if(a8m)a8m.onchange=()=>{state.a08MDay=a8m.value;render()};const a8d=$('#a08Day');if(a8d)a8d.onchange=()=>{state.a08Day=a8d.value;render()};
+ document.querySelectorAll('[data-a8ns]').forEach(b=>b.onclick=()=>{state.a8NsOnly=b.dataset.a8ns==='1';state.a8All=b.dataset.a8ns==='2';render();const el=document.getElementById('a8-branches');if(el)el.scrollIntoView({block:'start'})});document.querySelectorAll('[data-a8region]').forEach(b=>b.onclick=()=>{const v=b.dataset.a8region;state.a8Region=state.a8Region===v&&!state.a8Area?'':v;state.a8Area='';render();const el=document.getElementById('a8-branches');if(el&&state.a8Region)el.scrollIntoView({behavior:'smooth',block:'start'})});document.querySelectorAll('[data-a8area]').forEach(b=>b.onclick=()=>{const v=b.dataset.a8area;state.a8Area=v&&state.a8Area!==v?v:'';if(!v)state.a8Region='';render();const el=document.getElementById('a8-branches');if(el&&state.a8Area)el.scrollIntoView({behavior:'smooth',block:'start'})});document.querySelectorAll('[data-a8nsmode]').forEach(b=>b.onclick=()=>{state.a8nsMode=b.dataset.a8nsmode;render()});document.querySelectorAll('[data-s26f]').forEach(b=>b.onclick=()=>{state.s26F=b.dataset.s26f;render()});document.querySelectorAll('[data-a8eod-copy]').forEach(b=>b.onclick=async()=>{const box=b.closest('.a8eod'),ta=box.querySelector('.a8eod-text'),st=box.querySelector('.ap-copy-status');try{await navigator.clipboard.writeText(ta.value);st.textContent='คัดลอกแล้ว'}catch{ta.hidden=false;ta.select();document.execCommand('copy');ta.hidden=true;st.textContent='คัดลอกแล้ว'}});const s26d=$('#s26Day');if(s26d)s26d.onchange=()=>{state.s26Day=s26d.value;render()};document.querySelectorAll('[data-s26area]').forEach(b=>b.onclick=()=>{const v=b.dataset.s26area;state.s26Area=v&&state.s26Area!==v?v:'';render()});const a8n=$('#a8nsDay');if(a8n)a8n.onchange=()=>{state.a8nsDay=a8n.value;render()};document.querySelectorAll('[data-a8nsarea]').forEach(b=>b.onclick=()=>{const v=b.dataset.a8nsarea;state.a8nsArea=v&&state.a8nsArea!==v?v:'';render()});const a8m=$('#a08MDay');if(a8m)a8m.onchange=()=>{state.a08MDay=a8m.value;render()};const a8d=$('#a08Day');if(a8d)a8d.onchange=()=>{state.a08Day=a8d.value;render()};
  document.querySelectorAll('[data-areasum-unit]').forEach(b=>b.onclick=()=>{state.summaryUnit=b.dataset.areasumUnit;render()});
  document.querySelectorAll('[data-areasum-capture]').forEach(b=>b.onclick=()=>{const p=b.closest('.areasum'),on=p.classList.toggle('as-capture');b.textContent=on?'ปิดมุมมองแคป':'เต็มจอสำหรับแคป';fitAreaSummary(p)});
  document.querySelectorAll('[data-areasum-copy]').forEach(b=>b.onclick=async()=>{const box=b.closest('.ap-sms'),ta=box.querySelector('.ap-sms-text'),st=box.querySelector('.ap-copy-status');try{await navigator.clipboard.writeText(ta.value);st.textContent='คัดลอกแล้ว'}catch{ta.select();document.execCommand('copy');st.textContent='คัดลอกแล้ว'}setTimeout(()=>st.textContent='',2500)});
