@@ -596,6 +596,19 @@ main .insight-mini td:last-child:not(:first-child){white-space:normal}
 .a8board .a8-branch td,.a8board .a8-branch th{font-size:15px!important;padding:5px 9px!important}
 .a8-code{display:block;font-size:11px!important;color:#94a3b8!important}
 .a8-nstag{color:#0b1f5c;font-weight:800;font-size:12.5px}
+.s26board .s26-eodwrap>.as-tools{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:6px}
+.s26board .s26-eod{display:grid;grid-template-columns:300px 860px;gap:14px;align-items:start;width:max-content;max-width:none;margin:0;background:#fff;padding:4px}
+.s26board .s26-mframe{border:1.5px solid #1428a0;border-radius:12px;overflow:hidden;background:#fff}.s26board .s26-marea{width:300px}.s26board .s26-mbr{width:860px}
+.s26board .s26-mhead{background:#1428a0;color:#fff;padding:9px 12px}.s26board .s26-mhead h4{margin:0;font-size:15.5px;color:#fff}.s26board .s26-mhead h4 em{font-style:normal;font-weight:500;font-size:12.5px;color:#c7d6ff;margin-left:6px}
+.s26board .s26-mhead p{margin:2px 0 0;font-size:11px;line-height:1.35;color:#c7d6ff!important}
+.s26board .s26-mcols{display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:start}
+.s26board table.s26-mini{width:100%;border-collapse:collapse;table-layout:auto;font-size:14px}.s26board table.s26-mini th{background:#eef3ff;color:#0b1f5c;font-size:12.5px;font-weight:800;padding:6px 8px;text-align:left;border-bottom:1px solid #c7d6ff}
+.s26board table.s26-mini td{padding:5px 8px;border-bottom:1px solid #eef2f7;color:#0f172a;white-space:nowrap}.s26board table.s26-mini tr:nth-child(even) td{background:#f8faff}
+.s26board table.s26-mini td:first-child{color:#64748b;width:22px}.s26board .s26-marea table.s26-mini td:first-child{color:#0f172a;width:auto}
+.s26board table.s26-mini td b{color:#1428a0;font-size:16px;font-weight:800}.s26board table.s26-mini td:last-child,.s26board table.s26-mini th:last-child{text-align:center;width:56px}
+.s26board table.s26-mini td,.s26board table.s26-mini th{text-align:left!important}.s26board table.s26-mini td:last-child,.s26board table.s26-mini th:last-child{text-align:center!important}
+.s26board table.s26-mini tr.s26-tot td{background:#1428a0!important;color:#fff!important;font-weight:800;font-size:15px}.s26board table.s26-mini tr.s26-tot td b{color:#fff}
+.s26board .s26-mcols table+table{border-left:1px solid #c7d6ff}
 .s26board .s26-dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:1px solid #94a3b8}
 .s26board .s26-sumwrap{margin:0 0 6px}.s26board .s26-sumwrap>.as-tools{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:6px}.s26board .s26-tooltitle{margin-right:auto;font-weight:700;color:#1428a0}
 .s26board .s26-sum{background:#fff;border:1px solid #dbe5ff;border-radius:16px;padding:18px 20px;box-shadow:0 2px 10px rgba(20,40,160,.06)}
@@ -1671,6 +1684,17 @@ function s26uPage(){
 <div class="s26-grid2"><div class="s26-box"><h4>ยอดขายรายวัน ${legend}</h4>${dailyChart(620,210,true)}</div><div class="s26-box s26-mixbox"><h4>สัดส่วน Upsize ในยอด 512</h4><div class="s26-mix">${donut(mix,150)}<div><p><b>เดือนนี้</b> ${p0(mix)} <small>(${T.upM}/${T.upM+T.nM})</small></p><p><b>7 วันล่าสุด</b> ${p0(mix7)} <small>(${L7.u}/${L7.u+L7.n})</small></p>${prev7.length?`<p><b>7 วันก่อนหน้า</b> ${p0(P7.u+P7.n?P7.u/(P7.u+P7.n)*100:null)}</p>`:''}</div></div><h4>Stock ตามสี ${legend}</h4>${stockCol()}</div></div>
 <div class="s26-grid3"><div class="s26-act bad"><h4>🔁 ขาย 512 ปกติแทน ทั้งที่มี Upsize <em>${swap.length} สาขา</em></h4>${actSwap}</div><div class="s26-act warn"><h4>📦 มี Upsize แต่ยังไม่ขาย 512 เลย <em>${idle.length} สาขา</em></h4>${actIdle}</div><div class="s26-act good"><h4>⭐ ขาย Upsize ได้มากสุด <em>${sold.length} สาขาขายแล้ว</em></h4>${actTop}</div></div>
 </div></div>`;
+ // ---------- end-of-day stock frames ----------
+ const stA=[...new Set(all.map(s=>s.area))].sort((a,b)=>areaOrder(a)-areaOrder(b)).map(a=>({name:a,q:all.filter(s=>s.area===a).reduce((t,s)=>t+s.stkUp,0)})).filter(r=>r.q>0);
+ const stB=all.filter(s=>s.stkUp>0).sort((a,b)=>areaOrder(a.area)-areaOrder(b.area)||b.stkUp-a.stkUp||String(a.name).localeCompare(b.name));
+ const matTxt=upCodes.slice().sort().map(c=>`${c} ${esc(P[c].color)}`).join(' · ');
+ const mHead=t=>`<div class="s26-mhead"><h4>${t}</h4><p>Mat: ${matTxt}</p><p>รุ่น: H/S,SS,GALAXY S26ULT,5G,12/512,UPSIZE (ทุกสี) · Stock ณ ${esc(stkWhen)}</p></div>`;
+ const half=Math.ceil(stB.length/2),bCols=stB.length>16?[stB.slice(0,half),stB.slice(half)]:[stB];
+ const bTab=(l,off)=>`<table class="s26-mini"><thead><tr><th>#</th><th class="a8-left">สาขา</th><th class="a8-left">Area</th><th>Stock</th></tr></thead><tbody>${l.map((s,i)=>`<tr><td>${off+i+1}</td><td class="a8-left">${esc(sn(s.name))}</td><td class="a8-left">${esc(an(s.area))}</td><td><b>${fmt(s.stkUp)}</b></td></tr>`).join('')}</tbody></table>`;
+ const eod=`<div class="areasum s26-eodwrap"><div class="as-tools"><span class="s26-tooltitle">📦 Stock คงเหลือสิ้นวัน · แจ้งทีม</span><button data-areasum-capture>เต็มจอสำหรับแคป</button></div><div class="as-sheet s26-eod">
+<div class="s26-mframe s26-marea">${mHead('Stock คงเหลือ S26 Ultra 512 Upsize · ราย Area')}<table class="s26-mini"><thead><tr><th class="a8-left">Area</th><th>Stock</th></tr></thead><tbody>${stA.map(r=>`<tr><td class="a8-left">${esc(r.name)}</td><td><b>${fmt(r.q)}</b></td></tr>`).join('')}<tr class="s26-tot"><td>รวม</td><td><b>${fmt(T.stk)}</b></td></tr></tbody></table></div>
+<div class="s26-mframe s26-mbr">${mHead(`Stock คงเหลือ S26 Ultra 512 Upsize · รายสาขา <em>${stB.length} สาขา · ${fmt(T.stk)} เครื่อง</em>`)}<div class="s26-mcols">${bCols.map((l,k)=>bTab(l,k?half:0)).join('')}</div></div>
+</div></div>`;
  // ---------- area visual table ----------
  const areaList=[...new Set(all.map(s=>s.area))];
  const areas=areaList.map(a=>{const l=all.filter(s=>s.area===a);const r={name:a,stk:0,upM:0,nM:0,idle:0,swap:0,n:0};for(const s of l){r.stk+=s.stkUp;r.upM+=s.upM;r.nM+=s.nM;if(s.stkUp>0)r.n++;if(s.stkUp>0&&!s.upM&&!s.nM)r.idle++;if(s.stkUp>0&&s.nM>0)r.swap++}return r}).filter(r=>r.stk||r.upM||r.nM).sort((a,b)=>b.stk-a.stk||b.upM-a.upM);
@@ -1699,7 +1723,7 @@ function s26uPage(){
  const picker=dates.length?`<label class="a8-pick">ข้อมูลวันที่ <select id="s26Day">${dates.map(d=>`<option value="${d}" ${d===day?'selected':''}>${d}</option>`).join('')}</select></label>`:'';
  const sec=t=>`<p class="a8-sec"><span class="a8-model">${MODEL}</span>${t}</p>`;
  return `<section class="panel areasum a8board s26board"><div class="as-tools">${picker}<button data-areasum-capture>เต็มจอสำหรับแคป</button><button data-print>พิมพ์ / PDF</button></div>
-<div class="as-sheet">${summary}
+<div class="as-sheet">${summary}<div class="a8-gap"></div>${eod}
 <div class="a8-gap"></div>${sec('ยอดขายรายวันทั้งเดือน '+legend)}<div class="s26-box s26-wide">${dailyChart(1200,250,false)}</div>
 <div class="a8-gap"></div>${sec('BY AREA · Stock vs ยอดขาย <span class="a8-hint">คลิกชื่อ Area เพื่อดูรายสาขา</span>')}${areaT}
 <div class="a8-gap"></div><div class="a8-branchhead">${sec(`รายสาขา · ${pick?esc(pick):'ทุกพื้นที่'}`)}${pick?'<button data-s26area="">แสดงทุกพื้นที่</button>':''}</div>
